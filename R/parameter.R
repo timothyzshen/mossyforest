@@ -7,14 +7,16 @@
 #'                       Default \code{0.25}.
 #' @param keep_fraction  Fraction of features retained per module after
 #'                       screening. Default \code{0.50}.
-#' @param mtry_factor    Multiplier applied to \eqn{\sqrt{p}} to derive
-#'                       \code{mtry} for each screening random forest.
-#'                       Default \code{1}.
+#' @param mtry_factor    Multiplier applied to the \code{mtry_rule}'s base value
+#'                       to derive \code{mtry} for each screening random forest
+#'                       (\code{mtry = ceiling(mtry_factor * base)}, clamped to
+#'                       \code{[1, p]}). Default \code{1}.
 #' @param mtry_rule      How \code{mtry} is derived from the feature count
 #'                       \code{p}. \code{"auto"} (default) uses \code{p/3} for
-#'                       classification and \code{sqrt(p)} for regression (the
-#'                       historical rule); \code{"sqrt"} uses \code{sqrt(p)} for
-#'                       both; \code{"p_over_3"} uses \code{p/3} for both.
+#'                       classification and \code{sqrt(p)} for regression;
+#'                       \code{"sqrt"} uses \code{sqrt(p)} for classification
+#'                       AND regression; \code{"p_over_3"} uses \code{p/3} for
+#'                       classification AND regression.
 #' @param min_ntree      Minimum number of trees per screening forest.
 #'                       Default \code{500}.
 #' @param ntree_factor   Trees per forest = \code{max(p * ntree_factor, min_ntree)}.
@@ -91,6 +93,15 @@ screen_control <- function(drop_fraction = 0.25,
 #' @param mtry_rule        How \code{mtry} is derived from the feature count.
 #'                         One of \code{"auto"} (default), \code{"sqrt"},
 #'                         \code{"p_over_3"}. See \code{\link{screen_control}}.
+#'                         Unlike screening, a single stability-selection run
+#'                         can fit BOTH classification and regression forests
+#'                         even though \code{y} is one fixed type: when
+#'                         \code{use_cfres = TRUE}, any pool that gets
+#'                         cfRes-residualized (see \code{cfres_scope}) turns
+#'                         continuous for that pool's own forest, so its
+#'                         \code{mtry} is sized with the regression rule while
+#'                         other, non-residualized pools still use the
+#'                         classification rule in the same call.
 #' @param mtry_on_real     Logical. If \code{TRUE}, \code{mtry} on the augmented
 #'                         \eqn{[real | shadow]} matrix is \code{2 * rule(p_real)}
 #'                         so real-feature sampling is not diluted by the shadows.

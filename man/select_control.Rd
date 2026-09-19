@@ -37,7 +37,16 @@ forests. Default \code{1}.}
 
 \item{mtry_rule}{How \code{mtry} is derived from the feature count.
 One of \code{"auto"} (default), \code{"sqrt"},
-\code{"p_over_3"}. See \code{\link{screen_control}}.}
+\code{"p_over_3"}. See \code{\link{screen_control}}.
+Unlike screening, a single stability-selection run
+can fit BOTH classification and regression forests
+even though \code{y} is one fixed type: when
+\code{use_cfres = TRUE}, any pool that gets
+cfRes-residualized (see \code{cfres_scope}) turns
+continuous for that pool's own forest, so its
+\code{mtry} is sized with the regression rule while
+other, non-residualized pools still use the
+classification rule in the same call.}
 
 \item{mtry_on_real}{Logical. If \code{TRUE}, \code{mtry} on the augmented
 \eqn{[real | shadow]} matrix is \code{2 * rule(p_real)}
