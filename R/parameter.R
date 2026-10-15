@@ -9,13 +9,13 @@
 #'                       screening. Default \code{0.50}.
 #' @param mtry_factor    Multiplier applied to the \code{mtry_rule}'s base value
 #'                       to derive \code{mtry} for each screening random forest
-#'                       (\code{mtry = ceiling(mtry_factor * base)}, clamped to
+#'                       (\code{mtry = ceiling(mtry_factor * base)}, contrained to
 #'                       \code{[1, p]}). Default \code{1}.
 #' @param mtry_rule      How \code{mtry} is derived from the feature count
 #'                       \code{p}. \code{"auto"} (default) uses \code{p/3} for
-#'                       classification and \code{sqrt(p)} for regression;
+#'                       classification and \code{sqrt(p)} for regression.
 #'                       \code{"sqrt"} uses \code{sqrt(p)} for classification
-#'                       AND regression; \code{"p_over_3"} uses \code{p/3} for
+#'                       AND regression. \code{"p_over_3"} uses \code{p/3} for
 #'                       classification AND regression.
 #' @param min_ntree      Minimum number of trees per screening forest.
 #'                       Default \code{500}.
@@ -47,46 +47,43 @@ screen_control <- function(drop_fraction = 0.25,
 
 #' Selection Step Parameters
 #'
-#' Creates a parameter object controlling the shadow-stability selection step
+#' Creates a parameter object controlling the shadow stability selection step
 #' of \code{\link{mf}}.
 #'
-#' @param drop_fraction      Fraction of features dropped per RFE iteration
-#'                           during survivor-pool pre-reduction. Default
-#'                           \code{0.10}.
-#' @param mtry_factor        \code{mtry} multiplier for shadow-stability random
-#'                           forests. Default \code{1}.
+#' @param mtry_factor        \code{mtry} multiplier for random forests. 
+#'                            Default \code{1}.
 #' @param min_ntree          Minimum trees per forest. Default \code{500}.
 #' @param ntree_factor       Trees per forest scaling factor. Default \code{1}.
 #' @param shadow_mode        Shadow stability pooling strategy. One of
 #'                           \code{"split"} (correlated and unassigned pools
 #'                           evaluated separately) or \code{"within_module"}
 #'                           (one shadow run per module). Default \code{"split"}.
-#' @param n_boots            Bootstrap replicates for shadow stability.
+#' @param n_reps            Number of subsample replicates for shadow stability (each draws half the rows without replacement).
 #'                           Default \code{50}.
-#' @param pi_thr             Stability frequency threshold for correlated-pool
-#'                           features. A feature is selected if its shadow-win
-#'                           rate across bootstraps exceeds \code{pi_thr}.
+#' @param pi_thr             Stability frequency threshold for correlated pool
+#'                           features. A feature is selected if its shadow win
+#'                           rate across replicates exceeds \code{pi_thr}.
 #'                           Default \code{0.60}.
-#' @param pi_thr_unassigned       Stability threshold for the unassigned pool.
+#' @param pi_thr_unassigned  Stability threshold for the unassigned pool.
 #'                           \code{NULL} (default) uses an automatic elbow
-#'                           detection rule.
-#' @param shadow_percentile  Percentile of the shadow-feature distribution used
-#'                           as the importance threshold within each bootstrap.
+#'                           detection rule. We recommend keep this \code{NULL}.
+#' @param shadow_percentile  Percentile of the shadow feature distribution used
+#'                           as the importance threshold within each replicate.
 #'                           Default \code{95}.
-#' @param unassigned_modules      Character vector of module names treated as
+#' @param unassigned_modules  Character vector of module names treated as
 #'                           the unassigned pool (e.g. \code{"M10_unassigned"}).
 #'                           \code{NULL} disables split-pool logic.
-#' @param use_cfres   Logical. If \code{TRUE}, a cross-fitted random
+#' @param use_cfres   Logical. If \code{TRUE}, a cross fitted random
 #'                           forest is used to residualize \code{y} before the
 #'                           unassigned-pool stability step, reducing confounding
 #'                           from correlated modules. Default \code{FALSE}.
 #' @param cfres_n_folds        Number of cross-fitting folds for cfRes
 #'                           residualization. Default \code{5}.
-#' @param cfres_ntree          Trees per fold-forest in cfRes residualization.
+#' @param cfres_ntree          Trees per fold forest in cfRes residualization.
 #'                           Default \code{300}.
 #' @param cfres_scope          Scope of cfRes residualization. \code{"unassigned"}
 #'                           (default) applies cfRes only to the unassigned pool.
-#'                           \code{"all_modules"} applies per-module cfRes to
+#'                           \code{"all_modules"} applies per module cfRes to
 #'                           every module (removes the contribution of all other
 #'                           modules before that module's stability run).
 #'
@@ -95,43 +92,38 @@ screen_control <- function(drop_fraction = 0.25,
 #'                         \code{"p_over_3"}. See \code{\link{screen_control}}.
 #'                         Unlike screening, a single stability-selection run
 #'                         can fit BOTH classification and regression forests
-#'                         even though \code{y} is one fixed type: when
+#'                         even though \code{y} is one fixed type. For instance, when
 #'                         \code{use_cfres = TRUE}, any pool that gets
-#'                         cfRes-residualized (see \code{cfres_scope}) turns
-#'                         continuous for that pool's own forest, so its
-#'                         \code{mtry} is sized with the regression rule while
-#'                         other, non-residualized pools still use the
-#'                         classification rule in the same call.
+#'                         cfRes residualized (see \code{cfres_scope}) turns
+#'                         continuous for that pool's own forest. 
 #' @param mtry_on_real     Logical. If \code{TRUE}, \code{mtry} on the augmented
 #'                         \eqn{[real | shadow]} matrix is \code{2 * rule(p_real)}
-#'                         so real-feature sampling is not diluted by the shadows.
-#'                         A statistical correction, not a speed-up.
+#'                         so real feature sampling is not diluted by the shadows.
 #'                         Default \code{FALSE}.
 #' @param threshold_mode   Selection cutoff rule. \code{"pi_thr"} (default) uses
 #'                         the fixed \code{pi_thr} for the correlated pool and
-#'                         elbow detection for the unassigned pool;
+#'                         elbow detection for the unassigned pool.
 #'                         \code{"elbow"} applies the adaptive elbow rule to
 #'                         \emph{both} pools.
-#' @param early_stop_boots Logical. If \code{TRUE}, stop the bootstrap loop once
+#' @param early_stop Logical. If \code{TRUE}, stop the replicate loop once
 #'                         selection frequencies converge. Default \code{FALSE}.
-#' @param early_stop_tol   Convergence tolerance for \code{early_stop_boots}:
+#' @param early_stop_tol   Convergence tolerance for \code{early_stop}:
 #'                         stop when the largest change in any feature's
 #'                         frequency between batches falls below this.
 #'                         Default \code{0.01}.
-#' @param early_stop_check_every Bootstraps per batch; convergence is checked
+#' @param early_stop_check_every Replicates per batch. Convergence is checked
 #'                         between batches. Default \code{10}.
 #'
 #' @return An object of class \code{select_control}.
 #' @export
 #' @seealso \code{\link{screen_control}}, \code{\link{mf}}
-select_control <- function(drop_fraction    = 0.10,
-                            mtry_factor      = 1,
+select_control <- function(mtry_factor      = 1,
                             mtry_rule        = "auto",
                             mtry_on_real     = FALSE,
                             min_ntree        = 500L,
                             ntree_factor     = 1,
                             shadow_mode      = "split",
-                            n_boots          = 50L,
+                            n_reps          = 50L,
                             pi_thr           = 0.60,
                             pi_thr_unassigned     = NULL,
                             threshold_mode   = "pi_thr",
@@ -141,7 +133,7 @@ select_control <- function(drop_fraction    = 0.10,
                             cfres_n_folds      = 5L,
                             cfres_ntree        = 300L,
                             cfres_scope        = "unassigned",
-                            early_stop_boots = FALSE,
+                            early_stop = FALSE,
                             early_stop_tol   = 0.01,
                             early_stop_check_every = 10L) {
 
@@ -152,14 +144,13 @@ select_control <- function(drop_fraction    = 0.10,
   if (ntree_factor <= 0) stop("ntree_factor must be > 0", call. = FALSE)
 
   obj <- list(
-    drop_fraction     = as.numeric(drop_fraction),
     mtry_factor       = as.numeric(mtry_factor),
     mtry_rule         = mtry_rule,
     mtry_on_real      = as.logical(mtry_on_real),
     min_ntree         = as.integer(min_ntree),
     ntree_factor      = as.numeric(ntree_factor),
     shadow_mode       = shadow_mode,
-    n_boots           = as.integer(n_boots),
+    n_reps           = as.integer(n_reps),
     pi_thr            = as.numeric(pi_thr),
     pi_thr_unassigned      = if (is.null(pi_thr_unassigned)) NULL else as.numeric(pi_thr_unassigned),
     threshold_mode    = threshold_mode,
@@ -169,7 +160,7 @@ select_control <- function(drop_fraction    = 0.10,
     cfres_n_folds       = as.integer(cfres_n_folds),
     cfres_ntree         = as.integer(cfres_ntree),
     cfres_scope         = cfres_scope,
-    early_stop_boots  = as.logical(early_stop_boots),
+    early_stop  = as.logical(early_stop),
     early_stop_tol    = as.numeric(early_stop_tol),
     early_stop_check_every = as.integer(early_stop_check_every)
   )
@@ -185,8 +176,10 @@ select_control <- function(drop_fraction    = 0.10,
 #'
 #' @param power        Soft-thresholding power passed to
 #'                     \code{\link[WGCNA]{blockwiseModules}}. Default \code{6}.
-#' @param min_features Minimum number of features per module. Modules smaller
-#'                     than this trigger a warning. Default \code{20}.
+#' @param min_features Minimum module size, passed to
+#'                     \code{\link[WGCNA]{blockwiseModules}} as
+#'                     \code{minModuleSize}. Features in clusters smaller than
+#'                     this are left unassigned. Default \code{20}.
 #' @param ...          Additional arguments forwarded to
 #'                     \code{\link[WGCNA]{blockwiseModules}}.
 #'

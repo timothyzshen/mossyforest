@@ -1,8 +1,6 @@
 #' Mossy Forest Object
 #'
-#' Constructor for the \code{mossy_forest} return type. Users do not call
-#' this directly; it is called internally by \code{\link{mf}} and
-#' \code{\link{wmf}}.
+#' Output for the \code{mossy_forest} return type.
 #'
 #' @param final_rf        Final \code{ranger} object fitted on the stable
 #'                        feature set.
@@ -20,17 +18,17 @@
 #'                        \code{NULL} when unavailable. For binary classification,
 #'                        signed values (and \code{final_shap}'s \code{direction} /
 #'                        \code{dir_corr} / \code{signed_importance}) describe the
-#'                        probability of \code{levels(y)[1]} — the first level of
+#'                        probability of \code{levels(y)[1]}, the first level of
 #'                        the outcome factor. Relevel \code{y} if you want a
 #'                        different reference class.
 #' @param runtime         Named list of runtimes (seconds): Screen, Selection,
 #'                        Final_RF.
 #' @param feature_list    Data frame of the stable feature set with importance
 #'                        scores.
-#' @param stability_freq  Named numeric vector: shadow-bootstrap selection
+#' @param stability_freq  Named numeric vector. Shadow subsample selection
 #'                        frequency per stable feature.
-#' @param stability_data  Data frame with per-pool shadow-stability curves used
-#'                        by \code{\link{plot_stability_elbow}}. Columns:
+#' @param stability_data  Data frame with per pool shadow stability curves used
+#'                        by \code{\link{plot_stability_elbow}}. Columns are
 #'                        \code{pool}, \code{rank}, \code{feature}, \code{freq},
 #'                        \code{selected}, \code{threshold}, \code{elbow_rank}.
 #'                        \code{NULL} if unavailable.
@@ -68,8 +66,8 @@ mossy_forest <- function(final_rf, final_X, module_membership,
 
 #' Print a Mossy Forest Object
 #'
-#' Prints the stable feature set with mean |SHAP| importance scores and
-#' shadow-stability frequencies.
+#' Prints the stable feature set with mean abs(SHAP) importance scores and
+#' shadow stability frequencies.
 #'
 #' @param x   A \code{mossy_forest} object.
 #' @param ... Ignored.

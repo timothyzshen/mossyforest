@@ -35,7 +35,7 @@ make_sf_data <- function(n = 160, sd_within = 0.30, sd_noise = 0.35, seed = 11) 
 # Fast control objects so end-to-end tests stay well under a second each.
 fast_screen <- function(...) screen_control(min_ntree = 60L, ...)
 fast_select <- function(...) {
-  select_control(n_boots = 10L, min_ntree = 60L, pi_thr = 0.30,
+  select_control(n_reps = 10L, min_ntree = 60L, pi_thr = 0.30,
                  shadow_mode = "split", unassigned_modules = "unassigned", ...)
 }
 

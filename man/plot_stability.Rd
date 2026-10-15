@@ -3,14 +3,14 @@
 \name{plot_stability}
 \alias{plot_stability}
 \alias{plot_stability.mossy_forest}
-\title{Plot Shadow-Stability Frequencies for a Mossy Forest Object}
+\title{Plot Shadow Stability Frequencies for a Mossy Forest Object}
 \usage{
 plot_stability(object, ...)
 
 \method{plot_stability}{mossy_forest}(
   object,
   fill = "#3e568a",
-  main = "Shadow-Stability Frequencies",
+  main = "Shadow Stability Frequencies",
   ...
 )
 }
@@ -19,7 +19,7 @@ plot_stability(object, ...)
 
 \item{...}{Ignored.}
 
-\item{fill}{Bar colour. Default \code{"#3e568a"}.}
+\item{fill}{Bar color. Default \code{"#3e568a"}.}
 
 \item{main}{Plot title. Default \code{"Shadow-Stability Frequencies"}.}
 }
@@ -27,7 +27,7 @@ plot_stability(object, ...)
 A \code{ggplot2} object (invisibly).
 }
 \description{
-Displays the bootstrap shadow-stability selection frequency for each stable
+Displays the subsample shadow-stability selection frequency for each stable
 feature as a horizontal bar chart. Features are sorted by frequency.
 }
 \section{Methods (by class)}{

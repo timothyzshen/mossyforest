@@ -10,8 +10,10 @@ WGCNA_control(power = 6, min_features = 20, ...)
 \item{power}{Soft-thresholding power passed to
 \code{\link[WGCNA]{blockwiseModules}}. Default \code{6}.}
 
-\item{min_features}{Minimum number of features per module. Modules smaller
-than this trigger a warning. Default \code{20}.}
+\item{min_features}{Minimum module size, passed to
+\code{\link[WGCNA]{blockwiseModules}} as
+\code{minModuleSize}. Features in clusters smaller than
+this are left unassigned. Default \code{20}.}
 
 \item{...}{Additional arguments forwarded to
 \code{\link[WGCNA]{blockwiseModules}}.}

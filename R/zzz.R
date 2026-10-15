@@ -1,4 +1,4 @@
-# ── Internal Python environment ───────────────────────────────────────────────
+# Python Environment
 .mf_py <- new.env(parent = emptyenv())
 .mf_py$loaded <- FALSE
 
@@ -38,7 +38,7 @@
 #' }
 mf_setup <- function(python = NULL, condaenv = NULL, virtualenv = NULL) {
   if (!requireNamespace("reticulate", quietly = TRUE))
-    stop("Package 'reticulate' is required. Install with: install.packages('reticulate')",
+    stop("Package 'reticulate' is required. Install with install.packages('reticulate')",
          call. = FALSE)
 
   if (!is.null(condaenv))
@@ -52,14 +52,12 @@ mf_setup <- function(python = NULL, condaenv = NULL, virtualenv = NULL) {
   invisible(NULL)
 }
 
-# Internal: load the bundled Python backend into .mf_py
+# Internal, load the bundled Python backend into .mf_py
 .load_python_backend <- function() {
   if (!requireNamespace("reticulate", quietly = TRUE))
     stop("Package 'reticulate' is required. Install with: install.packages('reticulate')",
          call. = FALSE)
 
-  # backend verbose output contains non-ASCII characters; without this,
-  # ASCII-locale sessions crash with UnicodeEncodeError at verbose >= 2
   if (!nzchar(Sys.getenv("PYTHONIOENCODING")))
     Sys.setenv(PYTHONIOENCODING = "utf-8")
 
@@ -74,7 +72,7 @@ mf_setup <- function(python = NULL, condaenv = NULL, virtualenv = NULL) {
   invisible(NULL)
 }
 
-# Internal: ensure Python backend is ready, loading lazily on first call
+# Internal, ensure Python backend is ready, loading lazily on first call
 .ensure_python <- function() {
   if (isTRUE(.mf_py$loaded)) return(invisible(NULL))
   .load_python_backend()

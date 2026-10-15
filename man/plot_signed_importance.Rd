@@ -31,20 +31,20 @@ plot_signed_importance(object, ...)
 \code{Inf} to plot every stable feature.}
 
 \item{labels}{Optional named character vector mapping feature names (as in
-\code{final_SHAP$feature_name}) to human-readable labels for the axis, e.g.
+\code{final_SHAP$feature_name}) to readable labels for the axis, e.g.
 a gene-symbol or indicator-name lookup. Names not found are left unchanged.
 Default \code{NULL} (show the raw feature names).}
 
-\item{pos_color}{Bar colour for positive direction. Default \code{"#4393c3"}.}
+\item{pos_color}{Bar color for positive direction. Default \code{"#4393c3"}.}
 
-\item{neg_color}{Bar colour for negative direction. Default \code{"#d6604d"}.}
+\item{neg_color}{Bar color for negative direction. Default \code{"#d6604d"}.}
 
-\item{amb_color}{Bar colour for ambiguous features. Default \code{"#bbbbbb"}.}
+\item{amb_color}{Bar color for ambiguous features. Default \code{"#bbbbbb"}.}
 
-\item{pos_label}{Legend text for the positive-direction group. Default
+\item{pos_label}{Legend text for the positive direction group. Default
 \code{"increase"}.}
 
-\item{neg_label}{Legend text for the negative-direction group. Default
+\item{neg_label}{Legend text for the negative direction group. Default
 \code{"decrease"}.}
 
 \item{amb_label}{Legend text for the ambiguous group. Default
@@ -56,16 +56,16 @@ Default \code{NULL} (show the raw feature names).}
 A \code{ggplot2} object (invisibly).
 }
 \description{
-Diverging bar chart of signed importance = direction \eqn{\times} mean|SHAP|.
-Magnitude is mean|SHAP|; the sign is the global effect direction, taken from
+Bar chart of signed importance = direction \eqn{\times} mean|SHAP|.
+Magnitude is mean|SHAP| and the sign is the global effect direction taken from
 the Spearman correlation between each feature's value and its SHAP value
 (\code{mean(signed SHAP)} \eqn{\approx 0} because contributions cancel, so it
-is unusable for direction). Bars to the right increase the outcome, to the
-left decrease it. Features whose direction is ambiguous (non-monotone:
-\eqn{|\rho| < 0.1}) are greyed — a single direction is misleading for those.
+is unusable for direction). Bars to the right increase the average predicted outcome, to the
+left decreases it. Features whose direction is ambiguous (non-monotone:
+\eqn{|\rho| < 0.1}) are greyed.
 For binary classification, "the outcome" means the probability of
-\code{levels(y)[1]} — the first level of the factor passed as \code{y} to
-\code{\link{mf}}; relevel \code{y} first if you want a different reference
+\code{levels(y)[1]}, the first level of the factor passed as \code{y} to
+\code{\link{mf}}. Relevel \code{y} first if you want a different reference
 class.
 }
 \section{Methods (by class)}{

@@ -33,7 +33,7 @@ data frame. Default \code{FALSE}.}
 
 \item{geom_point}{Add a point at each feature step? Default \code{FALSE}.}
 
-\item{gradient}{Length-2 colour vector for the prediction gradient.
+\item{gradient}{Length 2 color vector for the prediction gradient.
 Default \code{c("blue", "red")}.}
 }
 \value{

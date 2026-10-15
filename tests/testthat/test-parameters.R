@@ -11,11 +11,11 @@ test_that("screen_control field order matches the Python reference", {
 })
 
 test_that("select_control field order matches the Python reference", {
-  expected <- c("drop_fraction", "mtry_factor", "mtry_rule", "mtry_on_real",
-                "min_ntree", "ntree_factor", "shadow_mode", "n_boots",
+  expected <- c("mtry_factor", "mtry_rule", "mtry_on_real",
+                "min_ntree", "ntree_factor", "shadow_mode", "n_reps",
                 "pi_thr", "pi_thr_unassigned", "threshold_mode", "shadow_percentile",
                 "unassigned_modules", "use_cfres", "cfres_n_folds", "cfres_ntree",
-                "cfres_scope", "early_stop_boots", "early_stop_tol",
+                "cfres_scope", "early_stop", "early_stop_tol",
                 "early_stop_check_every")
   expect_identical(names(formals(select_control)), expected)
   expect_identical(names(select_control()), expected)
@@ -29,14 +29,13 @@ test_that("control defaults match the Python reference", {
   expect_equal(sc$min_ntree, 500L)
 
   sl <- select_control()
-  expect_equal(sl$drop_fraction, 0.10)
   expect_equal(sl$pi_thr, 0.60)
   expect_equal(sl$shadow_mode, "split")
   expect_equal(sl$threshold_mode, "pi_thr")
   expect_equal(sl$cfres_scope, "unassigned")
   expect_false(sl$mtry_on_real)
   expect_false(sl$use_cfres)
-  expect_false(sl$early_stop_boots)
+  expect_false(sl$early_stop)
   expect_null(sl$pi_thr_unassigned)
   expect_null(sl$unassigned_modules)
 })

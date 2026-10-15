@@ -27,13 +27,13 @@ plot_importance(object, ...)
 \item{kind}{Plot type: \code{"bar"}, \code{"beeswarm"}, or
 \code{"both"}. Default \code{"beeswarm"}.}
 
-\item{color_bar_title}{Title for the colour bar in the beeswarm plot.
+\item{color_bar_title}{Title for the color bar in the beeswarm plot.
 Default \code{"Feature Value"}.}
 
 \item{max_display}{Maximum number of features to display. \code{NULL}
 shows all. Default \code{NULL}.}
 
-\item{fill}{Bar/point colour. Any valid \code{ggplot2} colour or
+\item{fill}{Bar/point color Any valid \code{ggplot2} color or
 hex code. Default \code{"#3e568a"}.}
 
 \item{sort_features}{Sort features by importance? Default \code{TRUE}.}
@@ -42,7 +42,7 @@ hex code. Default \code{"#3e568a"}.}
 Default \code{TRUE}.}
 
 \item{viridis_args}{Named list of arguments forwarded to \code{viridis}
-for the beeswarm colour scale. Default
+for the beeswarm color scale. Default
 \code{list(begin = 0.25, end = 0.75, option = "viridis")}.}
 }
 \value{
@@ -50,7 +50,7 @@ A \code{ggplot2} object (invisibly).
 }
 \description{
 Generates a feature importance plot from a \code{mossy_forest} object.
-Three plot types are available: bar, beeswarm, and both. Plots are built
+Three plot types of bar, beeswarm, and both can be used. Plots are built
 via \link[shapviz]{shapviz}.
 }
 \section{Methods (by class)}{

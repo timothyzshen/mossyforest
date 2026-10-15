@@ -36,7 +36,7 @@ shows all. Default \code{NULL}.}
 \item{order_fun}{Function used to order features. Default orders by
 absolute SHAP value.}
 
-\item{fill_colors}{Length-2 vector of colours for positive/negative bars.
+\item{fill_colors}{Length 2 vector of colors for positive/negative bars.
 Default \code{c("#59c46b", "#3b528b")}.}
 
 \item{contrast}{Apply text/arrow contrast? Default \code{TRUE}.}

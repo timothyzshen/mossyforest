@@ -31,14 +31,14 @@ plot_force(object, ...)
 \item{max_display}{Maximum number of features to display. \code{NULL}
 shows all. Default \code{NULL}.}
 
-\item{fill_colors}{Length-2 vector of colours. Default
+\item{fill_colors}{Length 2 vector of colors. Default
 \code{c("#59c46b", "#3b528b")}.}
 
 \item{contrast}{Apply text/arrow contrast? Default \code{TRUE}.}
 
 \item{bar_label_size}{Label size on bars. Default \code{3.2}.}
 
-\item{show_annotation}{Annotate bars? Default \code{TRUE}.}
+\item{show_annotation}{Annotate bars. Default \code{TRUE}.}
 }
 \value{
 A \code{ggplot2} object (invisibly).

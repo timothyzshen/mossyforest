@@ -22,14 +22,14 @@ screening. Default \code{0.50}.}
 
 \item{mtry_factor}{Multiplier applied to the \code{mtry_rule}'s base value
 to derive \code{mtry} for each screening random forest
-(\code{mtry = ceiling(mtry_factor * base)}, clamped to
+(\code{mtry = ceiling(mtry_factor * base)}, contrained to
 \code{[1, p]}). Default \code{1}.}
 
 \item{mtry_rule}{How \code{mtry} is derived from the feature count
 \code{p}. \code{"auto"} (default) uses \code{p/3} for
-classification and \code{sqrt(p)} for regression;
+classification and \code{sqrt(p)} for regression.
 \code{"sqrt"} uses \code{sqrt(p)} for classification
-AND regression; \code{"p_over_3"} uses \code{p/3} for
+AND regression. \code{"p_over_3"} uses \code{p/3} for
 classification AND regression.}
 
 \item{min_ntree}{Minimum number of trees per screening forest.

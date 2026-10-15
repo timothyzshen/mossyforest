@@ -1,17 +1,16 @@
 #' Detect Pairwise Interactions from a Mossy Forest Object
 #'
-#' Returns exact TreeSHAP pairwise interaction strengths for all stable
-#' features.  Interaction values are computed via
+#' Returns exact TreeSHAP pairwise interaction strengths for all stable features.  
+#' Interaction values are computed via
 #' \code{TreeExplainer.shap_interaction_values()} during model fitting and
-#' stored in the object — no re-computation is needed here.
+#' stored in the object.
 #'
 #' The \eqn{p \times p} \strong{interaction matrix} stored in
 #' \code{object$shap_obj$interaction_matrix} is defined as:
 #' \deqn{M_{jk} = \frac{1}{n}\sum_{i=1}^{n}|\phi_{jk}(x_i)|}
 #' where \eqn{\phi_{jk}(x_i)} is the TreeSHAP interaction value for the pair
 #' \eqn{(j, k)} at observation \eqn{i} (Lundberg et al., 2018).  Diagonal
-#' entries are main effects; off-diagonal entries are pairwise interactions.
-#' The matrix is symmetric: \eqn{M_{jk} = M_{kj}}.
+#' entries are main effects and off-diagonal entries are pairwise interactions.
 #'
 #' @param object  A \code{mossy_forest} object.
 #' @param thresh  Interaction-strength threshold.  Only pairs whose mean
@@ -41,7 +40,7 @@ detect_interaction <- function(object, thresh = 0, all = FALSE,
   if (is.null(int_mat) || !is.matrix(int_mat))
     stop(paste0(
       "No interaction matrix found in this mossy_forest object.\n",
-      "  Refit with mf() — interaction values are computed automatically ",
+      "  Refit with mf(), interaction values are computed automatically ",
       "during the final SHAP pass."
     ), call. = FALSE)
 
@@ -51,7 +50,7 @@ detect_interaction <- function(object, thresh = 0, all = FALSE,
     stop("At least two stable features are required to report interactions.",
          call. = FALSE)
 
-  # ── build upper-triangle long data frame ────────────────────────────────────
+  # builds upper triangle
   rows <- vector("list", p * (p - 1L) / 2L)
   k    <- 1L
   for (j in seq_len(p - 1L)) {
@@ -71,7 +70,7 @@ detect_interaction <- function(object, thresh = 0, all = FALSE,
 
   if (all) return(invisible(all_pairs))
 
-  # ── filter by threshold ──────────────────────────────────────────────────────
+  # filters by defined threshold
   sig_pairs <- all_pairs[all_pairs$Interaction_Strength > thresh, , drop = FALSE]
   rownames(sig_pairs) <- NULL
 

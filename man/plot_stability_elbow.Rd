@@ -3,14 +3,14 @@
 \name{plot_stability_elbow}
 \alias{plot_stability_elbow}
 \alias{plot_stability_elbow.mossy_forest}
-\title{Plot Shadow-Stability Selection Curves for a Mossy Forest Object}
+\title{Plot Shadow Stability Selection Curves for a Mossy Forest Object}
 \usage{
 plot_stability_elbow(object, ...)
 
 \method{plot_stability_elbow}{mossy_forest}(
   object,
   col_selected = "#3e568a",
-  col_unselected = "gray65",
+  col_unselected = "grey65",
   col_threshold = "tomato",
   col_elbow = "#e07b00",
   show_labels = FALSE,
@@ -24,19 +24,19 @@ plot_stability_elbow(object, ...)
 
 \item{...}{Ignored.}
 
-\item{col_selected}{Point colour for selected features.
+\item{col_selected}{Point color for selected features.
 Default \code{"#3e568a"}.}
 
-\item{col_unselected}{Point colour for unselected features.
-Default \code{"gray65"}.}
+\item{col_unselected}{Point color for unselected features.
+Default \code{"grey65"}.}
 
-\item{col_threshold}{Colour of the horizontal threshold line.
+\item{col_threshold}{Color of the horizontal threshold line.
 Default \code{"tomato"}.}
 
-\item{col_elbow}{Colour of the vertical elbow-rank line.
+\item{col_elbow}{Color of the vertical elbow-rank line.
 Default \code{"#e07b00"}.}
 
-\item{show_labels}{Show feature names on points? Default \code{FALSE}.
+\item{show_labels}{Show feature names on points. Default \code{FALSE}.
 Set \code{TRUE} only for small pools (\eqn{p \le 20}).}
 
 \item{ncol}{Number of columns in the facet grid. \code{NULL}
@@ -48,15 +48,14 @@ lets ggplot choose. Default \code{NULL}.}
 A \code{ggplot2} object (invisibly).
 }
 \description{
-Displays the shadow-bootstrap stability frequency curve for each selection
-pool with a horizontal threshold line and coloured points indicating which
+Displays the shadow subsample stability frequency curve for each selection
+pool with a horizontal threshold line and colored points indicating which
 features were selected.
 }
 \details{
-For \code{shadow_mode = "split"} two panels are shown: one for the
-correlated pool (fixed \eqn{\pi} threshold) and one for the unassigned
-pool (elbow or fixed threshold).  For \code{shadow_mode = "within_module"}
-one panel is shown per module.
+For \code{shadow_mode = "split"}, there is one panel for the
+correlated pool and one for the unassigned pool (elbow or fixed threshold).
+For \code{shadow_mode = "within_module"} one panel is shown per module.
 
 The dashed red line marks the stability threshold applied. For unassigned
 pools with elbow detection the elbow rank is marked with a vertical dotted

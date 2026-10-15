@@ -83,7 +83,7 @@ test_that("classification direction is w.r.t. levels(y)[1], not factor position 
 
   r <- mf(X, y, module_membership = mm,
           screen_params = screen_control(min_ntree = 100L),
-          select_params = select_control(n_boots = 10L, min_ntree = 100L, pi_thr = 0.3),
+          select_params = select_control(n_reps = 10L, min_ntree = 100L, pi_thr = 0.3),
           final_ntree = 200L, verbose = 0L, seed = 1L, backend = "python")
 
   f1_row <- r$final_SHAP[r$final_SHAP$feature_name == "f1", ]
@@ -91,4 +91,43 @@ test_that("classification direction is w.r.t. levels(y)[1], not factor position 
   # f1 increases P(case) = levels(y)[1] by construction -> direction must be +1.
   expect_equal(f1_row$direction, 1L)
   expect_gt(f1_row$dir_corr, 0)
+})
+
+test_that("wmf() honors WGCNA_control(min_features) as blockwiseModules' minModuleSize", {
+  skip_if_not_installed("WGCNA")
+  set.seed(7)
+  n  <- 90
+  z  <- replicate(3, rnorm(n))
+  # two correlated blocks (30 and 12 features) plus 18 noise columns
+  blk <- function(k, zz) as.data.frame(replicate(k, zz + rnorm(n, sd = 0.4)))
+  X  <- cbind(blk(30, z[, 1]), blk(12, z[, 2]), as.data.frame(replicate(18, rnorm(n))))
+  colnames(X) <- paste0("g", seq_len(ncol(X)))
+  y  <- as.numeric(z[, 1] - z[, 2] + rnorm(n, sd = 0.3))
+
+  fit_min <- function(k)
+    wmf(X, y, WGCNA_params = WGCNA_control(power = 6, min_features = k),
+        screen_params = fast_screen(), select_params = fast_select(),
+        final_ntree = 60L, num_processors = 1L, verbose = 0L, seed = 3L,
+        backend = "R", r_shap = "permutation")
+
+  # blockwiseModules labels the unassigned cluster "grey"
+  modules <- function(f) {
+    tb <- table(f$WGCNA_object$colors)
+    tb[names(tb) != "grey"]
+  }
+
+  # WGCNA's own default minModuleSize is 20, so only min_features = 5 can keep
+  # the 12-feature block -- this fails if min_features is not forwarded.
+  small <- fit_min(5L)
+  big   <- fit_min(25L)
+  expect_length(modules(small), 2L)
+  expect_length(modules(big), 1L)
+  expect_true(all(modules(big) >= 25L))
+
+  # the minimum must come from min_features, not a duplicate in `...`
+  expect_error(
+    wmf(X, y, WGCNA_params = WGCNA_control(power = 6, minModuleSize = 10),
+        verbose = 0L, backend = "R"),
+    "min_features"
+  )
 })

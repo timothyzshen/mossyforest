@@ -7,14 +7,13 @@
 \format{
 A list with three elements:
 \describe{
-\item{X}{A numeric matrix with 181 rows (countries) and 501 columns —
+\item{X}{A numeric matrix with 181 rows (countries) and 501 columns of
 World Bank development indicators for 2020, filtered to those present
-for at least 80\\% of countries and with residual gaps median-imputed.
+for at least 80\\% of countries and with residual gaps median imputed.
 Row names are country short names.}
-\item{y}{A numeric vector of length 181: life expectancy at birth
+\item{y}{A numeric vector of length 181 of life expectancy at birth
 (total, in years).  All life-table-derived series (life expectancy,
-mortality, survival, and death counts) were removed from \code{X} to
-avoid tautological prediction.}
+mortality, survival, and death counts) were removed from \code{X}.}
 \item{labels}{A named character vector mapping each indicator code in
 \code{colnames(X)} to its human-readable World Bank indicator name.}
 }
@@ -29,14 +28,7 @@ data(wdi)
 }
 \description{
 A list containing World Bank development indicators and life expectancy for
-181 countries in 2020.  Unlike the other bundled datasets — which are all
-gene-expression panels — this is a non-biological, genuinely
-high-dimensional (p > n), and highly-correlated tabular dataset.  It is
-included to demonstrate Mossy Forest on data whose features (GDP per
-capita, literacy rate, CO2 emissions, urban population share, ...) are
-intuitive to a general audience, while still posing the same challenge as
-genomic data: many more correlated, partially redundant measurements than
-observations competing to explain the outcome.
+181 countries in 2020.
 }
 \references{
 World Bank. \emph{World Development Indicators}. Washington, DC:

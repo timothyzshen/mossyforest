@@ -1,20 +1,17 @@
-# Pure-R backend for mossyforest — no Python / reticulate required.
+# Pure-R backend for mossyforest, does not require Python or reticulate.
 #
-# Screening RFE and shadow-stability selection both use ranger + permutation
-# importance.  For the final importance step the user chooses one of three
-# methods via the `r_shap` argument passed down from mf():
+# Screening RFE and shadow stability selection can either use ranger or permutation
+# importance. Permutation importance is mainly for computation improvements and its accuracy
+# is not prioritized given these are intermediary steps. For the final importance step the 
+# user chooses one of three methods via the `r_shap` argument passed down from mf():
 #
 #   "permutation" — ranger permutation VIM (scalar per feature, no extra pkg)
 #   "fastshap"    — approximate Shapley values via the fastshap package
 #                   (interaction_matrix = NULL)
-#   "treeshap"    — exact TreeSHAP via the treeshap package; also computes an
+#   "treeshap"    — exact TreeSHAP via the treeshap package. Only method that computes an
 #                   interaction matrix identical in structure to the Python
 #                   backend's (diagonal = main effects, off-diagonal = pairwise)
 #
-# Internal helpers — not exported.
-
-
-# ── Top-level orchestrator called by mf() ────────────────────────────────────
 
 .mf_R_backend <- function(X, y,
                            module_membership,
@@ -25,7 +22,6 @@
                            final_ntree,
                            nodesize,
                            num_processors,
-                           auto_initial,
                            verbose,
                            seed,
                            CLASSIFICATION,
@@ -37,7 +33,7 @@
   if (is.null(nodesize)) nodesize <- if (CLASSIFICATION) 1L else 5L
   if (verbose == 0L) options(warn = -1)
 
-  # ── Phase 1: Screening ───────────────────────────────────────────────────────
+  # Screening Phase
   if (verbose >= 1L) cat(sprintf("Screening [R / %s] ...\n", r_shap))
   t0 <- proc.time()
 
@@ -56,19 +52,8 @@
   runtime$Screen <- (proc.time() - t0)["elapsed"]
 
   survivor_list  <- screen_out$survivor_list
-  initial_screen <- screen_out$initial_screen
 
-  # ── Initial screening output ─────────────────────────────────────────────────
-  if (!is.null(auto_initial) && auto_initial %in% c("1", "2")) {
-    utils::write.csv(initial_screen, "initial_screen.csv", row.names = FALSE)
-    if (verbose >= 1L) cat("Initial screen saved to 'initial_screen.csv'.\n")
-    if (auto_initial == "1")
-      stop("Execution stopped after initial screen (auto_initial='1').", call. = FALSE)
-  }
-  if (!is.null(auto_initial) && auto_initial == "3")
-    stop("Execution stopped after initial screen (auto_initial='3').", call. = FALSE)
-
-  # ── Assemble survivor pool ───────────────────────────────────────────────────
+  # assemble survivor pool
   survivors_df        <- do.call(rbind, survivor_list)
   survivors_df        <- as.data.frame(survivors_df, stringsAsFactors = FALSE)
   survivors_df[, 2L]  <- as.numeric(survivors_df[, 2L])
@@ -83,7 +68,7 @@
   module_assigns_surv <- surv_feat_to_mod[colnames(X_surv)]
   module_assigns_surv[is.na(module_assigns_surv)] <- "unknown"
 
-  # ── Phase 2: Shadow-stability selection ─────────────────────────────────────
+  # shadow-stability selection
   if (verbose >= 1L) cat("Selecting stable features [R] ...\n")
   t0 <- proc.time()
 
@@ -109,7 +94,7 @@
 
   if (verbose >= 1L) cat(sprintf("Stable features: %d\n", n_stable))
 
-  # ── Build stability_data (same format as Python backend) ────────────────────
+  # build stability_data 
   stability_data <- if (length(sel_out$pool_stability) > 0L) {
     pool_rows <- lapply(sel_out$pool_stability, function(ps) {
       np <- length(ps$feature_names)
@@ -132,7 +117,7 @@
     NULL
   }
 
-  # ── Phase 3: Final ranger RF ─────────────────────────────────────────────────
+  # final pass
   if (verbose >= 1L)
     cat(sprintf("Fitting final model [R / %s] ...\n", r_shap))
   t0 <- proc.time()
@@ -165,7 +150,7 @@
     NULL
   }
 
-  # ── Compute SHAP values (method depends on r_shap) ───────────────────────────
+  # compute SHAP values
   shap_result <- if (!is.null(final_rf) && n_stable > 0L) {
     switch(r_shap,
       permutation = .mf_R_shap_permutation(final_rf, final_X, stable_features,
@@ -185,7 +170,7 @@
   shap_matrix        <- shap_result$shap_matrix
   interaction_matrix <- shap_result$interaction_matrix
 
-  # ── Importance scores (VIM or mean|SHAP|) ───────────────────────────────────
+  # importance scores
   # For permutation: use ranger's permutation VIM (scalar per feature).
   # For fastshap / treeshap: use mean |SHAP| per feature (matches Python output).
   perm_vims <- if (!is.null(final_rf) && n_stable > 0L)
@@ -201,7 +186,7 @@
   else
     as.numeric(perm_vims)
 
-  # ── feature_list & final_SHAP data frame ────────────────────────────────────
+  # final SHAP
   feature_list <- data.frame(
     feature_name        = stable_features,
     variable_importance = round(vim_for_report, 4L),
@@ -246,23 +231,6 @@
     shap_final_list$stability_freq   <- round(
       stability_freq_vec[stable_features], 4L)
 
-    # ── global effect direction: Spearman(feature value, SHAP value) ──────────
-    # Only meaningful with a real per-observation SHAP matrix (fastshap /
-    # treeshap); permutation VIM is scalar-only, so there is nothing to
-    # correlate against and direction is skipped for r_shap = "permutation".
-    # Mean signed SHAP ~ 0 (contributions cancel); direction lives in how a
-    # feature's SHAP tracks its value. Spearman is rank-based (captures
-    # monotone direction without assuming linearity). |rho| < 0.1 flags
-    # non-monotone / ambiguous direction (a single sign is misleading).
-    #
-    # Classification caveat: for treeshap this classification path currently
-    # errors upstream (treeshap::ranger.unify() does not support ranger
-    # probability forests), so direction is only reachable for regression
-    # today. For fastshap, the SHAP matrix explains the probability of the
-    # LOWER-sorted factor level (ranger's predictions column 1) — the
-    # opposite convention from the Python backend, which explains the
-    # HIGHER-sorted class. Direction sign is therefore not comparable
-    # between backends for fastshap + classification.
     if (r_shap %in% c("fastshap", "treeshap")) {
       dir_corr <- vapply(stable_features, function(feat) {
         xj <- as.numeric(final_X[[feat]]); sj <- shap_matrix[, feat]
@@ -290,7 +258,6 @@
   if (verbose >= 1L) cat("Done.\n")
   options(warn = 1)
 
-  # ── Rename survivor_list columns to standard names ───────────────────────────
   survivor_list_named <- setNames(
     lapply(names(survivor_list), function(mod) {
       df <- survivor_list[[mod]]
@@ -318,11 +285,7 @@
 }
 
 
-# ── SHAP method 1: ranger permutation VIM ────────────────────────────────────
-# Permutation importance is a single scalar per feature, not per-observation.
-# We return an NA shap_matrix so that plot_importance / SHAP-based plots are
-# simply not available, while the variable_importance column in the output
-# data frame carries the permutation VIM.
+# ranger permutation vim
 
 .mf_R_shap_permutation <- function(final_rf, final_X, stable_features, verbose) {
   if (verbose) cat("  Using permutation VIM (no per-observation SHAP values).\n")
@@ -335,7 +298,7 @@
 }
 
 
-# ── SHAP method 2: fastshap approximate SHAP ─────────────────────────────────
+# fastshap
 
 .mf_R_shap_fastshap <- function(final_rf, final_X, y, stable_features,
                                  seed, verbose) {
@@ -384,7 +347,7 @@
 }
 
 
-# ── SHAP method 3: treeshap exact TreeSHAP + interaction matrix ──────────────
+# treeshap exact TreeSHAP
 
 .mf_R_shap_treeshap <- function(final_rf, final_X, stable_features, verbose) {
   if (!requireNamespace("treeshap", quietly = TRUE))
@@ -413,14 +376,14 @@
     }
   )
 
-  # SHAP matrix (n × p) — treeshap names columns by feature name already
+  # SHAP matrix (n × p), treeshap names columns by feature name already
   shap_raw    <- as.matrix(ts$shaps)
   shap_cols   <- colnames(shap_raw)
 
-  # Subset / reorder to exactly stable_features (treeshap may add bias col etc.)
+  # Subset and reorder to exactly stable_features 
   keep <- intersect(stable_features, shap_cols)
   shap_matrix <- shap_raw[, keep, drop = FALSE]
-  # If treeshap dropped some features, pad with NA columns
+  # If treeshap dropped some features, replace with NA columns
   missing <- setdiff(stable_features, keep)
   if (length(missing) > 0L) {
     pad <- matrix(NA_real_, nrow = nrow(shap_matrix), ncol = length(missing),
@@ -429,7 +392,7 @@
   }
   shap_matrix <- shap_matrix[, stable_features, drop = FALSE]
 
-  # Interaction matrix (p × p) — mean |SHAP interaction| across observations.
+  # Interaction matrix (p × p) 
   # treeshap stores interactions as [p, p, n] (features × features × obs).
   interaction_matrix <- if (!is.null(ts$interactions)) {
     int_arr <- ts$interactions          # [p, p, n]
@@ -446,8 +409,7 @@
 }
 
 
-# ── Elbow detection ───────────────────────────────────────────────────────────
-
+# elbow detection
 .find_elbow_R <- function(freqs) {
   n <- length(freqs)
   if (n <= 2L) return(1L)
@@ -463,7 +425,7 @@
 }
 
 
-# ── mtry rule (mirrors the Python package / backend) ─────────────────────────
+# metry rule
 .compute_mtry_R <- function(n_features, mtry_factor, classification,
                              rule = "auto") {
   base <- switch(rule,
@@ -507,12 +469,9 @@
 }
 
 
-# ── Phase 1: Screening (R backend) ───────────────────────────────────────────
+# screening phase 1
 
-# ── TreeSHAP importance for a ranger forest (mean |SHAP| per feature) ─────────
-# Used when r_shap = "treeshap" so SCREENING and STABILITY SELECTION rank by
-# TreeSHAP (mirroring the Python engine) instead of ranger permutation VIM.
-# Requires the 'treeshap' package; supports regression + binary classification.
+# treeshap
 .vim_treeshap_ranger <- function(rf, Xdata, feats) {
   if (!requireNamespace("treeshap", quietly = TRUE))
     stop("Install the 'treeshap' package to use r_shap = 'treeshap' for ",
@@ -535,7 +494,7 @@
   use_ts         <- identical(r_shap, "treeshap")
   module_list    <- unique(module_membership)
   # NOTE: unlike the Python backend, the pure-R backend applies NO blockwise
-  # pre-reduction (max_modsize is ignored); modules are screened whole.
+  # pre-reduction (max_modsize is ignored)
 
   survivor_list <- vector("list", length(module_list))
   names(survivor_list) <- module_list
@@ -607,27 +566,16 @@
       stringsAsFactors = FALSE
     )
 
-    screen_df <- data.frame(
-      Module   = rep(mod, n_mod),
-      Feature  = feats,
-      VIM      = ifelse(feats %in% current_feats,
-                        as.numeric(vims_fin[feats]), NA_real_),
-      Survivor = feats %in% current_feats,
-      stringsAsFactors = FALSE,
-      check.names      = FALSE
-    )
-
-    survivor_list[[mod]] <- list(survivor = surv_df, screen_df = screen_df)
+    survivor_list[[mod]] <- list(survivor = surv_df)
   }
 
-  initial_screen <- do.call(rbind, lapply(survivor_list, `[[`, "screen_df"))
-  survivor_dfs   <- lapply(survivor_list, `[[`, "survivor")
+  survivor_dfs <- lapply(survivor_list, `[[`, "survivor")
 
-  list(survivor_list = survivor_dfs, initial_screen = initial_screen)
+  list(survivor_list = survivor_dfs)
 }
 
 
-# ── cfRes cross-fitted residualization (R backend, mirrors Python) ─────────────
+# cfRes cross-fitted residualization 
 .cross_fit_residuals_R <- function(X_corr, y_num, k_folds = 5L, ntree = 300L,
                                     mtry_factor = 1, nodesize = 5L,
                                     seed = 42L, num_processors = 1L) {
@@ -652,7 +600,7 @@
 }
 
 
-# ── Phase 2: Shadow-stability selection (R backend) ──────────────────────────
+# shadow stability selection
 
 .mf_R_select <- function(X_surv, y, survivor_list, select_params,
                           module_membership_surv,
@@ -668,15 +616,15 @@
   y_num     <- if (CLASSIFICATION) as.numeric(as.integer(y)) else as.numeric(y)
   unassigned_set <- if (!is.null(sl$unassigned_modules)) as.character(sl$unassigned_modules) else character(0L)
 
-  # cfRes residualized target for the unassigned pool (scope = "unassigned")
-  y_for_ind <- y_num
+  # cfRes residualized target for the unassigned pool 
+  y_for_unassigned <- y_num
   if (isTRUE(sl$use_cfres) && identical(sl$cfres_scope, "unassigned") &&
       length(unassigned_set) > 0L) {
     corr_feats <- all_feats[!(module_membership_surv[all_feats] %in% unassigned_set)]
     if (length(corr_feats) > 0L) {
       if (verbose) cat(sprintf("  cfRes: residualizing y by %d corr features (%d folds)\n",
                                length(corr_feats), sl$cfres_n_folds))
-      y_for_ind <- .cross_fit_residuals_R(
+      y_for_unassigned <- .cross_fit_residuals_R(
         X_surv[, corr_feats, drop = FALSE], y_num,
         k_folds = sl$cfres_n_folds, ntree = sl$cfres_ntree,
         mtry_factor = sl$mtry_factor, nodesize = nodesize,
@@ -684,12 +632,12 @@
     }
   }
 
-  # ── inner: one pool's shadow-bootstrap loop ────────────────────────────────
+  # one pool's shadow subsample loop
   run_pool <- function(pool_feats, y_pool, classif_pool, pool_seed) {
     np <- length(pool_feats)
     freq_map <- setNames(integer(np), pool_feats)
     prev_freqs <- NULL; n_done <- 0L
-    for (b in seq_len(sl$n_boots)) {
+    for (b in seq_len(sl$n_reps)) {
       bseed <- pool_seed + b * 97L
       set.seed(bseed)
       idx <- sample.int(n, max(1L, floor(n / 2L)), replace = FALSE)
@@ -716,7 +664,7 @@
       winners  <- pool_feats[!is.na(real_vim) & real_vim > shad_thr]
       freq_map[winners] <- freq_map[winners] + 1L
       n_done <- n_done + 1L
-      if (isTRUE(sl$early_stop_boots) &&
+      if (isTRUE(sl$early_stop) &&
           (b %% as.integer(sl$early_stop_check_every)) == 0L) {
         cur <- freq_map / n_done
         if (!is.null(prev_freqs) &&
@@ -729,7 +677,7 @@
     list(names = pool_feats[ord], freqs = as.numeric(fr[ord]))
   }
 
-  # ── build pool specs (name, feats, is_unassigned) ───────────────────────────────
+  # build pool specs (name, feats, is_unassigned)
   shadow_mode <- sl$shadow_mode
   if (!shadow_mode %in% c("within_module", "split")) shadow_mode <- "split"
   pool_specs <- list()
@@ -754,7 +702,7 @@
     ps <- pool_specs[[si]]
     if (length(ps$feats) == 0L) next
 
-    # cfRes-residualized target -> CONTINUOUS -> fit this pool as REGRESSION
+    # cfRes-residualized target 
     y_pool <- y; classif_pool <- CLASSIFICATION; use_resid <- FALSE
     if (isTRUE(sl$use_cfres)) {
       if (identical(sl$cfres_scope, "all_modules")) {
@@ -768,13 +716,13 @@
           classif_pool <- FALSE; use_resid <- TRUE
         }
       } else if (ps$is_unassigned) {           # scope = "unassigned"
-        y_pool <- y_for_ind; classif_pool <- FALSE; use_resid <- TRUE
+        y_pool <- y_for_unassigned; classif_pool <- FALSE; use_resid <- TRUE
       }
     }
 
     if (verbose)
-      cat(sprintf("  Shadow stability - pool '%s' (%d feats, %d boots)%s ...\n",
-                  ps$name, length(ps$feats), sl$n_boots,
+      cat(sprintf("  Shadow stability - pool '%s' (%d feats, %d reps)%s ...\n",
+                  ps$name, length(ps$feats), sl$n_reps,
                   if (use_resid) " [y=y_resid -> regression]" else ""))
 
     rp <- run_pool(ps$feats, y_pool, classif_pool, seed + si)

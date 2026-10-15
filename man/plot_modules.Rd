@@ -27,7 +27,7 @@ plot_modules(object, ...)
 
 \item{ylab}{Y-axis label. Default \code{"Proportion of features"}.}
 
-\item{module_labels}{Optional two-column data frame mapping old module labels
+\item{module_labels}{Optional two column data frame mapping old module labels
 to new display labels. Default \code{NULL}.}
 }
 \value{
@@ -35,7 +35,7 @@ A \code{ggplot2} object (invisibly).
 }
 \description{
 Shows the proportion of features per module that were selected as stable,
-coloured by selection status.
+colored by selection status.
 }
 \section{Methods (by class)}{
 \itemize{

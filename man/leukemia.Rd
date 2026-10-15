@@ -19,19 +19,17 @@ original authors).}
 data(leukemia)
 }
 \description{
-A list containing the top 500 most-variable probe-sets from the Acute
+A list containing the top 500 most variable probe sets from the Acute
 Lymphoblastic Leukemia (ALL) microarray dataset (Chiaretti et al., 2004),
 along with the corresponding molecular-subtype outcome.
 }
 \details{
 Starting from the \code{ALL} Bioconductor package (128 patients, 12 625
 probe-sets), samples are restricted to the B-lineage cases carrying one of
-two balanced molecular subtypes — the BCR/ABL (Philadelphia-chromosome, Ph+)
-fusion versus cytogenetically normal (NEG) — yielding 79 patients (37
-BCR/ABL, 42 NEG).  This is the standard \emph{balanced} ALL benchmark used in the
-Bioconductor "Case Studies", replacing the heavily imbalanced B-vs-T lineage
-split.  Features were then ranked by across-sample variance and the top 500
-retained.  See \code{data-raw/prep_leukemia.R} for the exact preprocessing
+two balanced molecular subtypes which were the BCR/ABL (Philadelphia-chromosome, Ph+)
+fusion versus cytogenetically normal (NEG). This creates 79 patients (37
+BCR/ABL, 42 NEG).Features were then ranked by across-sample variance and the top 500
+are retainedretained.  See \code{data-raw/prep_leukemia.R} for the exact preprocessing
 steps.
 }
 \references{
@@ -39,5 +37,8 @@ Chiaretti, S. et al. (2004). Gene expression profile of adult
 T-cell acute lymphocytic leukemia identifies distinct subsets of patients
 with different response to therapy and survival. \emph{Blood}, 103(7),
 2771–2778. \doi{10.1182/blood-2003-09-3243}
+
+Li, X. \emph{ALL: A data package}. Bioconductor.
+\doi{10.18129/B9.bioc.ALL}
 }
 \keyword{datasets}

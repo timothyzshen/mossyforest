@@ -29,9 +29,9 @@ plot_elbow(object, ...)
 
 \item{ylab}{Y-axis label. Default \code{"Absolute SHAP Values"}.}
 
-\item{colorName}{Legend title for module colour. Default \code{"Module"}.}
+\item{colorName}{Legend title for module color. Default \code{"Module"}.}
 
-\item{color}{Colour points by module membership? Default \code{TRUE}.}
+\item{color}{Color points by module membership? Default \code{TRUE}.}
 
 \item{module_labels}{Optional two-column data frame of label mappings. Default \code{NULL}.}
 }
@@ -40,7 +40,7 @@ A \code{ggplot2} object (invisibly).
 }
 \description{
 Ranks stable features by mean |SHAP| importance and displays an elbow
-(scree) plot, optionally coloured by module membership.
+(scree) plot, optionally colored by module membership.
 }
 \section{Methods (by class)}{
 \itemize{

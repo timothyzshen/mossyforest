@@ -3,23 +3,30 @@ Title: Mossy Forest
 Version: 1.0.0
 Authors@R:
     person("Timothy", "Shen", , "tzshen@g.ucla.edu", role = c("aut", "cre"))
-Description: An interpretable network-aware random-forest feature selection framework for
+Description: An interpretable network aware random forest feature selection framework for
     high-dimensional and correlated data. Combines recursive feature elimination,
-    WGCNA, and shadow-stability selection through TreeSHAP values. A Python environment with 	scikit-learn, shap, and numpy is
-    required; configure it with mf_setup().
+    WGCNA, and shadow stability selection through TreeSHAP values. A Python environment with scikit-learn, shap, and numpy is
+    required. It can be configured through mf_setup()
 Imports:
+    grDevices,
     reticulate (>= 1.35),
     ranger (>= 0.16.0),
     shapviz (>= 0.9.4),
     ggplot2 (>= 3.4.0),
     dplyr (>= 1.1.0),
-    scales (>= 1.3.0)
+    scales (>= 1.3.0),
+    stats,
+    utils
 License: GPL (>= 3)
+URL: https://github.com/timothyzshen/mossyforest,
+    https://github.com/timothyzshen/mossyforest-py
+BugReports: https://github.com/timothyzshen/mossyforest/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends:
     R (>= 4.1.0)
+SystemRequirements: Python (>= 3.9) with scikit-learn, shap, and numpy
 LazyData: true
 Suggests:
     WGCNA,

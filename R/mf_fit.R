@@ -1,16 +1,13 @@
 #' Mossy Forest Feature Selection
 #'
-#' Runs the Mossy Forest algorithm: module-stratified recursive feature
-#' elimination (screening), followed by shadow-stability selection, and a
-#' single-shot SHAP importance pass on the stable feature set.
+#' Runs the Mossy Forest algorithm.
 #'
 #' @export
 #' @param X                 A data frame where each column is a feature.
-#' @param y                 Response vector (numeric for regression; factor for
+#' @param y                 Response vector (numeric for regression, factor for
 #'                          classification).
 #' @param module_membership A named character vector assigning each feature in
-#'                          \code{X} to a module. Names must match
-#'                          \code{colnames(X)}.
+#'                          \code{X} to a module. Names must match \code{colnames(X)}.
 #' @param screen_params     Screening parameters. See
 #'                          \code{\link{screen_control}}.
 #' @param select_params     Selection parameters. See
@@ -23,12 +20,7 @@
 #'                          Default \code{1}.
 #' @param max_modsize       Maximum module size before blockwise pre-reduction
 #'                          is applied (Python backend only). Default \code{5000}.
-#' @param auto_initial      Controls the initial screening output.
-#'                          \code{"1"} — save CSV and stop;
-#'                          \code{"2"} — save CSV and continue;
-#'                          \code{"3"} — stop without saving;
-#'                          \code{"4"} — continue without saving (default).
-#' @param verbose           Verbosity level. \code{0} = silent; \code{1} =
+#' @param verbose           Verbose level. \code{0} = silent; \code{1} =
 #'                          progress messages; \code{2} = detailed output.
 #'                          Default \code{1}.
 #' @param seed              Integer random seed for reproducibility. Defaults to
@@ -41,7 +33,7 @@
 #'                          a Python scikit-learn / SHAP engine via
 #'                          \pkg{reticulate} and provides exact TreeSHAP values
 #'                          plus an interaction matrix.  \code{"R"} uses a
-#'                          pure-R \pkg{ranger} implementation — no Python
+#'                          R \pkg{ranger} implementation, no Python
 #'                          installation required. Choose the final importance
 #'                          method with \code{r_shap}.
 #' @param r_shap            Final SHAP / importance method used when
@@ -87,7 +79,7 @@
 #'
 #'   res <- mf(X, y, module_membership = mem,
 #'             screen_params = screen_control(min_ntree = 100),
-#'             select_params = select_control(n_boots = 25))
+#'             select_params = select_control(n_reps = 25))
 #'   print(res)
 #'   plot_importance(res)
 #' }
@@ -99,7 +91,6 @@ mf <- function(X, y,
                nodesize        = NULL,
                num_processors  = 1L,
                max_modsize     = 5000L,
-               auto_initial    = "4",
                verbose         = 1L,
                seed            = as.integer(Sys.time()),
                compute_interactions = TRUE,
@@ -109,12 +100,12 @@ mf <- function(X, y,
   backend <- match.arg(backend, c("python", "R"))
   r_shap  <- match.arg(r_shap,  c("permutation", "fastshap", "treeshap"))
 
-  # ── lazy-load Python backend ─────────────────────────────────────────────────
+  # load Python backend
   if (backend == "python") .ensure_python()
 
   set.seed(seed)
 
-  # ── validation ───────────────────────────────────────────────────────────────
+  # validation
   if (!is.data.frame(X))
     stop("X must be a data.frame.", call. = FALSE)
   if (!(is.vector(y) || is.factor(y)))
@@ -138,7 +129,7 @@ mf <- function(X, y,
   runtime <- list(Screen = NA_real_, Selection = NA_real_, Final_RF = NA_real_)
 
   # ══════════════════════════════════════════════════════════════════════════════
-  # R backend — pure ranger, no Python required
+  # R backend, pure ranger, no Python required
   # ══════════════════════════════════════════════════════════════════════════════
   if (backend == "R") {
     return(.mf_R_backend(
@@ -151,7 +142,6 @@ mf <- function(X, y,
       final_ntree              = final_ntree,
       nodesize                 = nodesize,
       num_processors           = num_processors,
-      auto_initial             = auto_initial,
       verbose                  = verbose,
       seed                     = seed,
       CLASSIFICATION           = CLASSIFICATION,
@@ -160,20 +150,9 @@ mf <- function(X, y,
     ))
   }
 
-  # ── prepare inputs for Python ────────────────────────────────────────────────
+  # Python inputs
   X_mat <- as.matrix(X); mode(X_mat) <- "double"
-  # Binary classification: encode 1 = levels(y)[1], 0 = levels(y)[2]. Plain
-  # as.integer(y) would instead give each level's 1-based POSITION (1, 2, ...),
-  # not a 0/1 label — so sklearn's classes_ becomes [1, 2] rather than [0, 1],
-  # and every downstream "class 1" / "positive class" pick (mf_python_backend.py
-  # hardcodes classes_[1] throughout) would silently explain levels(y)[2]
-  # instead of levels(y)[1]. This flips the sign of every direction / dir_corr /
-  # signed_importance value for classification results. The remap below makes
-  # class "1" deterministically mean levels(y)[1], matching the pure-R backend's
-  # own convention (ranger's probability columns are ordered by levels(y), so
-  # its fastshap direction path already explains levels(y)[1] natively).
-  # Multiclass (>2 levels) is untouched: no single "positive class" is picked
-  # there, so plain position encoding is fine.
+
   y_py <- if (CLASSIFICATION) {
     if (nlevels(y) == 2L) as.integer(y == levels(y)[1L]) else as.integer(y)
   } else {
@@ -183,7 +162,7 @@ mf <- function(X, y,
   module_assign <- as.character(module_membership_screen[feature_names])
   module_list_r <- as.character(module_list_screen)
 
-  # ── Phase 1: Screening ───────────────────────────────────────────────────────
+  # Screening Phase
   if (verbose >= 1L) cat("Screening ...\n")
   t0 <- proc.time()
 
@@ -203,46 +182,23 @@ mf <- function(X, y,
     classification     = CLASSIFICATION,
     seed               = as.integer(seed),
     n_jobs             = as.integer(num_processors),
-    max_modsize        = as.integer(max_modsize),
-    verbose            = as.logical(verbose >= 2L)
+    max_modsize        = as.integer(max_modsize)
   )
 
   runtime$Screen <- (proc.time() - t0)["elapsed"]
 
-  # ── Reconstruct survivor_results from Python output ──────────────────────────
+  # Reconstruct survivor_results from Python output 
   survivor_results <- vector("list", length(module_list_screen))
   for (i in seq_along(module_list_screen)) {
-    mod_name <- as.character(module_list_screen[i])
     feats    <- as.character(screen_py$survivor_features[[i]])
     vims     <- as.numeric(screen_py$survivor_vims[[i]])
     surv_df  <- data.frame(features    = feats,
                             mod_varlist = vims,
                             stringsAsFactors = FALSE)
-    mask <- (screen_py$initial_module == mod_name)
-    init_df <- if (any(mask)) {
-      data.frame(
-        "Module"   = screen_py$initial_module[mask],
-        "Feature"  = screen_py$initial_feat[mask],
-        "VIM"      = as.numeric(screen_py$initial_vim[mask]),
-        "Survivor" = as.logical(screen_py$initial_survivor[mask]),
-        stringsAsFactors = FALSE, check.names = FALSE
-      )
-    } else NULL
-    survivor_results[[i]] <- list(survivor = surv_df, screen_df = init_df)
+    survivor_results[[i]] <- list(survivor = surv_df)
   }
-  initial_screen <- do.call(rbind, lapply(survivor_results, `[[`, "screen_df"))
 
-  # ── Initial screening output ──────────────────────────────────────────────────
-  if (!is.null(auto_initial) && auto_initial %in% c("1", "2")) {
-    write.csv(initial_screen, "initial_screen.csv", row.names = FALSE)
-    if (verbose >= 1L) cat("Initial screen saved to 'initial_screen.csv'.\n")
-    if (auto_initial == "1")
-      stop("Execution stopped after initial screen (auto_initial='1').", call. = FALSE)
-  }
-  if (!is.null(auto_initial) && auto_initial == "3")
-    stop("Execution stopped after initial screen (auto_initial='3').", call. = FALSE)
-
-  # ── Assemble survivor pool ────────────────────────────────────────────────────
+  # Compile survivor pool 
   survivor_list  <- lapply(survivor_results, `[[`, "survivor")
   names(survivor_list) <- module_list_screen
 
@@ -252,7 +208,7 @@ mf <- function(X, y,
   names(survivors)  <- c("featureID", "Permutation VIM")
   X_surv <- X[, names(X) %in% survivors[, 1], drop = FALSE]
 
-  # ── Phase 2: Shadow-stability selection ──────────────────────────────────────
+  # Shadow stability selection
   if (verbose >= 1L) cat("Selecting stable features ...\n")
   t0 <- proc.time()
 
@@ -277,8 +233,6 @@ mf <- function(X, y,
     y                       = y_py,
     feature_names_surv      = as.list(colnames(X_surv)),
     module_assignments_surv = as.list(as.character(module_assigns_ordered)),
-    drop_fraction           = sl$drop_fraction,
-    number_selected         = 1L,
     mtry_factor             = sl$mtry_factor,
     ntree_factor            = as.numeric(sl$ntree_factor),
     min_ntree               = as.integer(sl$min_ntree),
@@ -286,8 +240,7 @@ mf <- function(X, y,
     classification          = CLASSIFICATION,
     seed                    = as.integer(seed),
     n_jobs                  = as.integer(num_processors),
-    max_modsize             = as.integer(max_modsize),
-    n_boots                 = as.integer(sl$n_boots),
+    n_reps                 = as.integer(sl$n_reps),
     pi_thr                  = as.numeric(sl$pi_thr),
     compute_interactions    = as.logical(compute_interactions),
     shadow_mode             = sl$shadow_mode,
@@ -297,7 +250,7 @@ mf <- function(X, y,
     threshold_mode          = sl$threshold_mode,
     mtry_rule               = sl$mtry_rule,
     mtry_on_real            = as.logical(sl$mtry_on_real),
-    early_stop_boots        = as.logical(sl$early_stop_boots),
+    early_stop        = as.logical(sl$early_stop),
     early_stop_tol          = as.numeric(sl$early_stop_tol),
     early_stop_check_every  = as.integer(sl$early_stop_check_every),
     unassigned_modules           = if (!is.null(sl$unassigned_modules))
@@ -311,7 +264,7 @@ mf <- function(X, y,
 
   runtime$Selection <- (proc.time() - t0)["elapsed"]
 
-  # ── Unpack Python selection output ───────────────────────────────────────────
+  # Unpack Python selection output
   stable_features <- as.character(select_py$final_features)
   n_stable        <- length(stable_features)
 
@@ -328,7 +281,7 @@ mf <- function(X, y,
       as.numeric(unlist(select_py$shap_matrix)),
       nrow     = nrow(X_surv),
       ncol     = n_stable,
-      byrow    = TRUE,   # Python .tolist() is row-major; fill by row to preserve
+      byrow    = TRUE,   # Python .tolist() is row-major, fill by row to preserve
                          # per-observation alignment (else the matrix is scrambled)
       dimnames = list(NULL, stable_features)
     )
@@ -336,13 +289,13 @@ mf <- function(X, y,
     matrix(NA_real_, nrow = nrow(X_surv), ncol = 0L)
   }
 
-  # ── TreeSHAP interaction matrix (p × p mean |SHAP interaction|) ──────────────
+  # TreeSHAP interaction matrix 
   interaction_matrix <- if (n_stable > 0L && length(select_py$interaction_matrix) > 0L) {
     m <- matrix(
       as.numeric(unlist(select_py$interaction_matrix)),
       nrow     = n_stable,
       ncol     = n_stable,
-      byrow    = TRUE,   # row-major from Python (symmetric, but keep consistent)
+      byrow    = TRUE,   # row-major from Python 
       dimnames = list(stable_features, stable_features)
     )
     m
@@ -358,7 +311,7 @@ mf <- function(X, y,
     )
   })
 
-  # ── Per-pool shadow-stability data (for plot_stability_elbow) ───────────────
+  # per pool shadow-stability data 
   stability_data <- if (!is.null(select_py$pool_stability) &&
                          length(select_py$pool_stability) > 0L) {
     pool_rows <- lapply(select_py$pool_stability, function(p) {
@@ -381,7 +334,7 @@ mf <- function(X, y,
     NULL
   }
 
-  # ── Phase 3: Final ranger RF ─────────────────────────────────────────────────
+  # Final Random Forest Phase
   if (verbose >= 1L) cat("Fitting final model ...\n")
   t0 <- proc.time()
 
@@ -396,8 +349,6 @@ mf <- function(X, y,
   current_p  <- ncol(final_X)
 
   if (current_p == 0L) {
-    # empty stable set: return a valid (predictor-less) fit instead of letting
-    # ranger error on a zero-covariate design
     if (verbose >= 1L)
       cat("No stable features selected; skipping final model.\n")
     final_rf <- NULL
@@ -430,7 +381,7 @@ mf <- function(X, y,
     stringsAsFactors = FALSE
   )
 
-  # ── Build final_SHAP data frame (from Python TreeSHAP) ───────────────────────
+  # Build final_SHAP data frame 
   mean_shap <- setNames(as.numeric(select_py$final_vims), stable_features)
 
   shap_final_list <- data.frame(
@@ -463,11 +414,7 @@ mf <- function(X, y,
     shap_final_list$ci_upper_signed  <- round(mean_signed[feat_ord] + 1.96 * se_signed[feat_ord], 4L)
     shap_final_list$stability_freq   <- round(stability_freq_vec[feat_ord],                    4L)
 
-    # ── global effect direction: Spearman(feature value, SHAP value) ──────────
-    # Mean signed SHAP ~ 0 (contributions cancel); direction lives in how a
-    # feature's SHAP tracks its value. Spearman is rank-based (captures monotone
-    # direction without assuming linearity). |rho| < 0.1 flags non-monotone /
-    # ambiguous direction (a single sign is misleading — use a dependence plot).
+    # global signed direction
     val_ord  <- final_X[, valid_cols, drop = FALSE]
     dir_corr <- vapply(seq_along(valid_cols), function(k) {
       xj <- as.numeric(val_ord[[k]]); sj <- shap_ord[, k]
@@ -485,8 +432,6 @@ mf <- function(X, y,
 
   runtime$Final_RF <- (proc.time() - t0)["elapsed"]
 
-  # shap_obj: $shapley_values = signed n×p SHAP matrix
-  #           $interaction_matrix = p×p mean |SHAP interaction| (TreeSHAP exact)
   shap_obj <- list(
     shapley_values    = shap_matrix,
     interaction_matrix = interaction_matrix
@@ -532,14 +477,13 @@ mf <- function(X, y,
 #'   co-expression network analysis. \emph{Statistical Applications in Genetics
 #'   and Molecular Biology}, 4(1), Article 17.
 wmf <- function(X, y,
-                WGCNA_params  = WGCNA_control(p = 6),
+                WGCNA_params  = WGCNA_control(power = 6),
                 screen_params = screen_control(),
                 select_params = select_control(),
                 final_ntree   = 500L,
                 nodesize      = NULL,
                 num_processors = 1L,
                 max_modsize   = 5000L,
-                auto_initial  = "4",
                 verbose       = 1L,
                 seed          = as.integer(Sys.time()),
                 backend       = "python",
@@ -547,10 +491,6 @@ wmf <- function(X, y,
 
   if (!requireNamespace("WGCNA", quietly = TRUE))
     stop("Package 'WGCNA' is required for wmf(). Install it first.", call. = FALSE)
-  # WGCNA's blockwiseModules calls cor() with extra args (weights.x, cosine, ...)
-  # that only WGCNA::cor understands.  When WGCNA is only namespace-loaded
-  # (not library()-attached) the lookup resolves to stats::cor and errors.
-  # attachNamespace() puts WGCNA on the search path without startup noise.
   if (!"WGCNA" %in% .packages())
     attachNamespace("WGCNA")
 
@@ -566,7 +506,11 @@ wmf <- function(X, y,
 
   # Run WGCNA
   wgcna_ctrl <- WGCNA_params
-  WGCNA_args <- c(list(datExpr = X, power = wgcna_ctrl$power),
+  if ("minModuleSize" %in% names(wgcna_ctrl$extra_args))
+    stop("Set the minimum module size with WGCNA_control(min_features = ), ",
+         "not minModuleSize.", call. = FALSE)
+  WGCNA_args <- c(list(datExpr = X, power = wgcna_ctrl$power,
+                       minModuleSize = wgcna_ctrl$min_features),
                   wgcna_ctrl$extra_args)
   if (verbose == 0L) {
     invisible(capture.output(suppressWarnings(suppressMessages({
@@ -586,7 +530,6 @@ wmf <- function(X, y,
     nodesize          = nodesize,
     num_processors    = num_processors,
     max_modsize       = max_modsize,
-    auto_initial      = auto_initial,
     verbose           = verbose,
     seed              = seed,
     backend           = backend,

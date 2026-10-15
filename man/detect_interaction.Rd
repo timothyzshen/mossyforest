@@ -27,10 +27,10 @@ A data frame with columns \code{FeatureA}, \code{FeatureB}, and
 by interaction strength descending.  Invisibly when \code{all = TRUE}.
 }
 \description{
-Returns exact TreeSHAP pairwise interaction strengths for all stable
-features.  Interaction values are computed via
+Returns exact TreeSHAP pairwise interaction strengths for all stable features.
+Interaction values are computed via
 \code{TreeExplainer.shap_interaction_values()} during model fitting and
-stored in the object — no re-computation is needed here.
+stored in the object.
 }
 \details{
 The \eqn{p \times p} \strong{interaction matrix} stored in
@@ -38,8 +38,7 @@ The \eqn{p \times p} \strong{interaction matrix} stored in
 \deqn{M_{jk} = \frac{1}{n}\sum_{i=1}^{n}|\phi_{jk}(x_i)|}
 where \eqn{\phi_{jk}(x_i)} is the TreeSHAP interaction value for the pair
 \eqn{(j, k)} at observation \eqn{i} (Lundberg et al., 2018).  Diagonal
-entries are main effects; off-diagonal entries are pairwise interactions.
-The matrix is symmetric: \eqn{M_{jk} = M_{kj}}.
+entries are main effects and off-diagonal entries are pairwise interactions.
 }
 \references{
 Lundberg, S. M., Erion, G., Chen, H., DeGrave, A., Prutkin, J. M.,

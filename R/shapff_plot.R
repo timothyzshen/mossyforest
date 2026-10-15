@@ -1,23 +1,23 @@
 #' Plot Feature Importance for a Mossy Forest Object
 #'
 #' Generates a feature importance plot from a \code{mossy_forest} object.
-#' Three plot types are available: bar, beeswarm, and both. Plots are built
+#' Three plot types of bar, beeswarm, and both can be used. Plots are built
 #' via \link[shapviz]{shapviz}.
 #'
 #' @param object          A \code{mossy_forest} object.
 #' @param kind            Plot type: \code{"bar"}, \code{"beeswarm"}, or
 #'                        \code{"both"}. Default \code{"beeswarm"}.
-#' @param color_bar_title Title for the colour bar in the beeswarm plot.
+#' @param color_bar_title Title for the color bar in the beeswarm plot.
 #'                        Default \code{"Feature Value"}.
 #' @param max_display     Maximum number of features to display. \code{NULL}
 #'                        shows all. Default \code{NULL}.
-#' @param fill            Bar/point colour. Any valid \code{ggplot2} colour or
+#' @param fill            Bar/point color Any valid \code{ggplot2} color or
 #'                        hex code. Default \code{"#3e568a"}.
 #' @param sort_features   Sort features by importance? Default \code{TRUE}.
 #' @param show_numbers    Show numeric SHAP values on the bar plot?
 #'                        Default \code{TRUE}.
 #' @param viridis_args    Named list of arguments forwarded to \code{viridis}
-#'                        for the beeswarm colour scale. Default
+#'                        for the beeswarm color scale. Default
 #'                        \code{list(begin = 0.25, end = 0.75, option = "viridis")}.
 #' @param ...             Ignored.
 #'
@@ -64,7 +64,7 @@ plot_importance.mossy_forest <- function(object,
   if (!is.logical(sort_features))
     stop("sort_features must be logical")
   if (kind != "bar" && !is_valid_color(fill))
-    stop("fill must be a valid ggplot2 colour or hex code")
+    stop("fill must be a valid ggplot2 color or hex code")
   if (!is.logical(show_numbers))
     stop("show_numbers must be logical")
 
@@ -98,7 +98,7 @@ plot_importance.mossy_forest <- function(object,
 #'                      shows all. Default \code{NULL}.
 #' @param order_fun     Function used to order features. Default orders by
 #'                      absolute SHAP value.
-#' @param fill_colors   Length-2 vector of colours for positive/negative bars.
+#' @param fill_colors   Length 2 vector of colors for positive/negative bars.
 #'                      Default \code{c("#59c46b", "#3b528b")}.
 #' @param contrast      Apply text/arrow contrast? Default \code{TRUE}.
 #' @param show_connection Show connections between bars? Default \code{TRUE}.
@@ -144,7 +144,7 @@ plot_waterfall.mossy_forest <- function(object,
   if (max_display > length(colnames(shap_object)))
     stop("max_display must not exceed the number of stable features")
   if (any(!sapply(fill_colors, is_valid_color)))
-    stop("fill_colors must be valid ggplot2 colours or hex codes")
+    stop("fill_colors must be valid ggplot2 colors or hex codes")
   if (!is.logical(contrast))
     stop("contrast must be logical")
   if (!is.logical(show_connection))
@@ -187,11 +187,11 @@ plot_waterfall.mossy_forest <- function(object,
 #' @param row_name        Optional name(s) for the observation(s).
 #' @param max_display     Maximum number of features to display. \code{NULL}
 #'                        shows all. Default \code{NULL}.
-#' @param fill_colors     Length-2 vector of colours. Default
+#' @param fill_colors     Length 2 vector of colors. Default
 #'                        \code{c("#59c46b", "#3b528b")}.
 #' @param contrast        Apply text/arrow contrast? Default \code{TRUE}.
 #' @param bar_label_size  Label size on bars. Default \code{3.2}.
-#' @param show_annotation Annotate bars? Default \code{TRUE}.
+#' @param show_annotation Annotate bars. Default \code{TRUE}.
 #' @param ...             Ignored.
 #'
 #' @return A \code{ggplot2} object (invisibly).
@@ -232,7 +232,7 @@ plot_force.mossy_forest <- function(object,
   if (max_display > length(colnames(shap_object)))
     stop("max_display must not exceed the number of stable features")
   if (any(!sapply(fill_colors, is_valid_color)))
-    stop("fill_colors must be valid ggplot2 colours or hex codes")
+    stop("fill_colors must be valid ggplot2 colors or hex codes")
   if (!is.logical(contrast))
     stop("contrast must be logical")
   if (!is.numeric(bar_label_size))
@@ -264,13 +264,13 @@ plot_force.mossy_forest <- function(object,
 }
 
 
-#' Plot Shadow-Stability Frequencies for a Mossy Forest Object
+#' Plot Shadow Stability Frequencies for a Mossy Forest Object
 #'
-#' Displays the bootstrap shadow-stability selection frequency for each stable
+#' Displays the subsample shadow-stability selection frequency for each stable
 #' feature as a horizontal bar chart. Features are sorted by frequency.
 #'
 #' @param object  A \code{mossy_forest} object.
-#' @param fill    Bar colour. Default \code{"#3e568a"}.
+#' @param fill    Bar color. Default \code{"#3e568a"}.
 #' @param main    Plot title. Default \code{"Shadow-Stability Frequencies"}.
 #' @param ...     Ignored.
 #'
@@ -286,7 +286,7 @@ plot_stability <- function(object, ...) {
 #' @export
 plot_stability.mossy_forest <- function(object,
                                           fill = "#3e568a",
-                                          main = "Shadow-Stability Frequencies",
+                                          main = "Shadow Stability Frequencies",
                                           ...) {
 
   freq <- object$stability_freq
@@ -303,7 +303,7 @@ plot_stability.mossy_forest <- function(object,
 
   p <- ggplot(df, aes(x = frequency, y = feature)) +
     geom_col(fill = fill) +
-    geom_vline(xintercept = 0.5, linetype = "dashed", colour = "grey50") +
+    geom_vline(xintercept = 0.5, linetype = "dashed", color = "grey50") +
     scale_x_continuous(limits = c(0, 1), labels = scales::percent_format()) +
     labs(x = "Selection frequency", y = NULL, title = main) +
     theme_minimal(base_size = 13) +
@@ -314,31 +314,30 @@ plot_stability.mossy_forest <- function(object,
 }
 
 
-#' Plot Shadow-Stability Selection Curves for a Mossy Forest Object
+#' Plot Shadow Stability Selection Curves for a Mossy Forest Object
 #'
-#' Displays the shadow-bootstrap stability frequency curve for each selection
-#' pool with a horizontal threshold line and coloured points indicating which
+#' Displays the shadow subsample stability frequency curve for each selection
+#' pool with a horizontal threshold line and colored points indicating which
 #' features were selected.
 #'
-#' For \code{shadow_mode = "split"} two panels are shown: one for the
-#' correlated pool (fixed \eqn{\pi} threshold) and one for the unassigned
-#' pool (elbow or fixed threshold).  For \code{shadow_mode = "within_module"}
-#' one panel is shown per module.
+#' For \code{shadow_mode = "split"}, there is one panel for the
+#' correlated pool and one for the unassigned pool (elbow or fixed threshold).  
+#' For \code{shadow_mode = "within_module"} one panel is shown per module.
 #'
 #' The dashed red line marks the stability threshold applied. For unassigned
 #' pools with elbow detection the elbow rank is marked with a vertical dotted
 #' line.
 #'
 #' @param object         A \code{mossy_forest} object.
-#' @param col_selected   Point colour for selected features.
+#' @param col_selected   Point color for selected features.
 #'                       Default \code{"#3e568a"}.
-#' @param col_unselected Point colour for unselected features.
-#'                       Default \code{"gray65"}.
-#' @param col_threshold  Colour of the horizontal threshold line.
+#' @param col_unselected Point color for unselected features.
+#'                       Default \code{"grey65"}.
+#' @param col_threshold  Color of the horizontal threshold line.
 #'                       Default \code{"tomato"}.
-#' @param col_elbow      Colour of the vertical elbow-rank line.
+#' @param col_elbow      Color of the vertical elbow-rank line.
 #'                       Default \code{"#e07b00"}.
-#' @param show_labels    Show feature names on points? Default \code{FALSE}.
+#' @param show_labels    Show feature names on points. Default \code{FALSE}.
 #'                       Set \code{TRUE} only for small pools (\eqn{p \le 20}).
 #' @param ncol           Number of columns in the facet grid. \code{NULL}
 #'                       lets ggplot choose. Default \code{NULL}.
@@ -358,7 +357,7 @@ plot_stability_elbow <- function(object, ...) {
 #' @export
 plot_stability_elbow.mossy_forest <- function(object,
                                                  col_selected   = "#3e568a",
-                                                 col_unselected = "gray65",
+                                                 col_unselected = "grey65",
                                                  col_threshold  = "tomato",
                                                  col_elbow      = "#e07b00",
                                                  show_labels    = FALSE,
@@ -373,29 +372,29 @@ plot_stability_elbow.mossy_forest <- function(object,
       "  Refit with mf() to populate stability_data."
     ), call. = FALSE)
 
-  # ── ensure factor order: pools in the order they appear ─────────────────────
+  # ensure factor order, pools in the order they appear
   pool_order    <- unique(sd$pool)
   sd$pool_fct   <- factor(sd$pool, levels = pool_order)
   sd$selected_f <- factor(sd$selected, levels = c(TRUE, FALSE),
                            labels = c("Selected", "Not selected"))
 
-  # ── one threshold-line value per pool (same for all rows in that pool) ───────
+  # one threshold line value per pool (same for all rows in that pool) 
   thr_df <- unique(sd[, c("pool_fct", "threshold")])
 
-  # ── elbow-rank lines (NA pools are skipped) ───────────────────────────────────
+  # elbow rank lines (NA pools are skipped)
   elbow_df <- unique(sd[!is.na(sd$elbow_rank), c("pool_fct", "elbow_rank")])
 
-  # ── base plot ─────────────────────────────────────────────────────────────────
+  # base plot
   p <- ggplot(sd, aes(x = rank, y = freq)) +
-    geom_line(colour = "gray70", linewidth = 0.5) +
-    geom_point(aes(colour = selected_f), size = 2.5, alpha = 0.9) +
+    geom_line(color = "grey70", linewidth = 0.5) +
+    geom_point(aes(color = selected_f), size = 2.5, alpha = 0.9) +
     # threshold line per facet
     geom_hline(data = thr_df,
                aes(yintercept = threshold),
-               colour   = col_threshold,
+               color   = col_threshold,
                linetype = "dashed",
                linewidth = 0.7) +
-    scale_colour_manual(
+    scale_color_manual(
       values = c("Selected" = col_selected, "Not selected" = col_unselected),
       name   = NULL
     ) +
@@ -415,18 +414,18 @@ plot_stability_elbow.mossy_forest <- function(object,
       panel.grid.minor = element_blank()
     )
 
-  # ── elbow rank: vertical dotted line + annotation ────────────────────────────
+  # elbow rank 
   if (nrow(elbow_df) > 0L) {
     p <- p +
       geom_vline(data = elbow_df,
                  aes(xintercept = elbow_rank),
-                 colour   = col_elbow,
+                 color   = col_elbow,
                  linetype = "dotted",
                  linewidth = 0.8) +
       geom_label(data = elbow_df,
                  aes(x = elbow_rank, y = 0.97,
                      label = paste0("elbow\nrank ", elbow_rank)),
-                 colour    = col_elbow,
+                 color    = col_elbow,
                  size      = 2.8,
                  hjust     = 0,
                  label.size = 0,
@@ -435,7 +434,7 @@ plot_stability_elbow.mossy_forest <- function(object,
                  inherit.aes = FALSE)
   }
 
-  # ── optional feature labels ───────────────────────────────────────────────────
+  # optional feature labels 
   if (show_labels) {
     p <- p +
       geom_text(aes(label = feature),
@@ -481,7 +480,7 @@ plot_potential_interactions.mossy_forest <- function(object, ...) {
   feats <- rownames(int_mat)
   p_n   <- length(feats)
 
-  # upper-triangle long format (off-diagonal pairs only)
+  # upper triangle long format (off-diagonal pairs only)
   rows <- vector("list", p_n * (p_n - 1L) / 2L)
   k    <- 1L
   for (j in seq_len(p_n - 1L)) {
@@ -497,7 +496,7 @@ plot_potential_interactions.mossy_forest <- function(object, ...) {
   }
   plot_df <- do.call(rbind, rows)
 
-  # symmetric: add the mirror so heatmap is square
+  # symmetric
   mirror  <- data.frame(
     FeatureA             = plot_df$FeatureB,
     FeatureB             = plot_df$FeatureA,
@@ -521,9 +520,9 @@ plot_potential_interactions.mossy_forest <- function(object, ...) {
   p <- ggplot(full_df,
               aes(x = FeatureA, y = FeatureB,
                   fill = Interaction_Strength)) +
-    geom_tile(colour = "white") +
+    geom_tile(color = "white") +
     geom_text(aes(label = sprintf("%.3f", Interaction_Strength)),
-              colour = "black", size = 2.5) +
+              color = "black", size = 2.5) +
     scale_fill_gradient2(
       low      = "#4575b4",
       mid      = "white",
@@ -559,7 +558,7 @@ plot_potential_interactions.mossy_forest <- function(object, ...) {
 #'                   data frame. Default \code{FALSE}.
 #' @param plot_title Plot title. Default \code{"Decision Plot"}.
 #' @param geom_point Add a point at each feature step? Default \code{FALSE}.
-#' @param gradient   Length-2 colour vector for the prediction gradient.
+#' @param gradient   Length 2 color vector for the prediction gradient.
 #'                   Default \code{c("blue", "red")}.
 #' @param ...        Ignored.
 #'
@@ -602,7 +601,7 @@ plot_decisions.mossy_forest <- function(object,
       stop("highlight must be a character or numeric vector")
   }
 
-  # base value: mean prediction on training data (not available in just_shap mode)
+  # base value
   base_value <- if (!just_shap)
     mean(predict(object$final_rf, data = object$final_X)$predictions)
   else
@@ -622,7 +621,7 @@ plot_decisions.mossy_forest <- function(object,
   shap_long$Feature <- factor(shap_long$Feature)
   shap_long$id      <- NULL
 
-  # sort features by mean |SHAP|
+  # sort features by mean abs(SHAP)
   feat_order <- names(sort(colMeans(abs(shap_values)), decreasing = FALSE))
   shap_long$Feature <- factor(shap_long$Feature, levels = feat_order)
 
@@ -644,7 +643,7 @@ plot_decisions.mossy_forest <- function(object,
                                levels = c("", feat_order))
   shap_long <- dplyr::bind_rows(start, shap_long)
 
-  # terminal cumulative value for colour scale
+  # terminal cumulative value for color scale
   last_vals <- shap_long %>%
     dplyr::group_by(Observation) %>%
     dplyr::summarise(Last_Cumulative_SHAP = dplyr::last(Cumulative_SHAP),
@@ -657,13 +656,13 @@ plot_decisions.mossy_forest <- function(object,
   p <- ggplot(shap_long,
               aes(x = Cumulative_SHAP, y = Feature,
                   group = Observation)) +
-    geom_path(aes(colour = Last_Cumulative_SHAP), linewidth = 0.8) +
-    scale_colour_gradient(low = gradient[1], high = gradient[2]) +
+    geom_path(aes(color = Last_Cumulative_SHAP), linewidth = 0.8) +
+    scale_color_gradient(low = gradient[1], high = gradient[2]) +
     theme_minimal() +
     labs(title  = plot_title,
          x      = "Cumulative SHAP Value",
          y      = "Feature",
-         colour = "Predicted\nOutput") +
+         color = "Predicted\nOutput") +
     theme(axis.text.y = element_text(size = 12),
           axis.text.x = element_text(size = 10),
           plot.title  = element_text(size = 14, hjust = 0.5))
@@ -671,7 +670,7 @@ plot_decisions.mossy_forest <- function(object,
   # add baseline vline only when the model is available
   if (!is.null(base_value))
     p <- p + geom_vline(xintercept = base_value,
-                         colour = "#999999", linetype = "dashed")
+                         color = "#999999", linetype = "dashed")
 
   if (geom_point)
     p <- p + geom_point(size = 1.5)
@@ -684,13 +683,13 @@ plot_decisions.mossy_forest <- function(object,
 #' Plot Module Membership Distribution for a Mossy Forest Object
 #'
 #' Shows the proportion of features per module that were selected as stable,
-#' coloured by selection status.
+#' colored by selection status.
 #'
 #' @param object        A \code{mossy_forest} object.
 #' @param main          Plot title. Default \code{"Module Membership Distribution"}.
 #' @param xlab          X-axis label. Default \code{"Module"}.
 #' @param ylab          Y-axis label. Default \code{"Proportion of features"}.
-#' @param module_labels Optional two-column data frame mapping old module labels
+#' @param module_labels Optional two column data frame mapping old module labels
 #'                      to new display labels. Default \code{NULL}.
 #' @param ...           Ignored.
 #'
@@ -786,14 +785,14 @@ plot_modules.mossy_forest <- function(object,
 #' Plot Elbow Plot of Absolute SHAP Values for a Mossy Forest Object
 #'
 #' Ranks stable features by mean |SHAP| importance and displays an elbow
-#' (scree) plot, optionally coloured by module membership.
+#' (scree) plot, optionally colored by module membership.
 #'
 #' @param object        A \code{mossy_forest} object.
 #' @param main          Plot title. Default \code{"Elbow Plot of Absolute SHAP Values"}.
 #' @param xlab          X-axis label. Default \code{"Features"}.
 #' @param ylab          Y-axis label. Default \code{"Absolute SHAP Values"}.
-#' @param colorName     Legend title for module colour. Default \code{"Module"}.
-#' @param color         Colour points by module membership? Default \code{TRUE}.
+#' @param colorName     Legend title for module color. Default \code{"Module"}.
+#' @param color         Color points by module membership? Default \code{TRUE}.
 #' @param module_labels Optional two-column data frame of label mappings. Default \code{NULL}.
 #' @param ...           Ignored.
 #'
@@ -849,23 +848,23 @@ plot_elbow.mossy_forest <- function(object,
     if (all(is_color(plot_df$module_membership))) {
       p <- ggplot(plot_df,
                   aes(x = rank, y = variable_importance,
-                      colour = module_membership)) +
+                      color = module_membership)) +
         geom_point(size = 3) +
-        geom_line(aes(group = 1), colour = "gray60") +
-        scale_colour_identity(guide = "legend")
+        geom_line(aes(group = 1), color = "grey60") +
+        scale_color_identity(guide = "legend")
     } else {
       p <- ggplot(plot_df,
                   aes(x = rank, y = variable_importance,
-                      colour = module_membership)) +
+                      color = module_membership)) +
         geom_point(size = 3) +
-        geom_line(aes(group = 1), colour = "gray60") +
-        scale_colour_discrete()
+        geom_line(aes(group = 1), color = "grey60") +
+        scale_color_discrete()
     }
   } else {
     p <- ggplot(plot_df,
                 aes(x = rank, y = variable_importance)) +
       geom_point(size = 3) +
-      geom_line(aes(group = 1), colour = "gray60")
+      geom_line(aes(group = 1), color = "grey60")
   }
 
   p <- p +
@@ -873,7 +872,7 @@ plot_elbow.mossy_forest <- function(object,
     theme_minimal(base_size = 14) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           plot.title  = element_text(size = 14, hjust = 0.5)) +
-    labs(x = xlab, y = ylab, colour = colorName, title = main)
+    labs(x = xlab, y = ylab, color = colorName, title = main)
 
   plot(p)
   invisible(p)
@@ -882,16 +881,16 @@ plot_elbow.mossy_forest <- function(object,
 
 #' Plot Directional (Signed) Feature Importance for a Mossy Forest Object
 #'
-#' Diverging bar chart of signed importance = direction \eqn{\times} mean|SHAP|.
-#' Magnitude is mean|SHAP|; the sign is the global effect direction, taken from
+#' Bar chart of signed importance = direction \eqn{\times} mean|SHAP|.
+#' Magnitude is mean|SHAP| and the sign is the global effect direction taken from
 #' the Spearman correlation between each feature's value and its SHAP value
 #' (\code{mean(signed SHAP)} \eqn{\approx 0} because contributions cancel, so it
-#' is unusable for direction). Bars to the right increase the outcome, to the
-#' left decrease it. Features whose direction is ambiguous (non-monotone:
-#' \eqn{|\rho| < 0.1}) are greyed — a single direction is misleading for those.
+#' is unusable for direction). Bars to the right increase the average predicted outcome, to the
+#' left decreases it. Features whose direction is ambiguous (non-monotone:
+#' \eqn{|\rho| < 0.1}) are greyed.
 #' For binary classification, "the outcome" means the probability of
-#' \code{levels(y)[1]} — the first level of the factor passed as \code{y} to
-#' \code{\link{mf}}; relevel \code{y} first if you want a different reference
+#' \code{levels(y)[1]}, the first level of the factor passed as \code{y} to
+#' \code{\link{mf}}. Relevel \code{y} first if you want a different reference
 #' class.
 #'
 #' @param object    A \code{mossy_forest} object.
@@ -899,15 +898,15 @@ plot_elbow.mossy_forest <- function(object,
 #'   \eqn{|}signed importance\eqn{|}. Default \code{20L}; use \code{NULL} or
 #'   \code{Inf} to plot every stable feature.
 #' @param labels    Optional named character vector mapping feature names (as in
-#'   \code{final_SHAP$feature_name}) to human-readable labels for the axis, e.g.
+#'   \code{final_SHAP$feature_name}) to readable labels for the axis, e.g.
 #'   a gene-symbol or indicator-name lookup. Names not found are left unchanged.
 #'   Default \code{NULL} (show the raw feature names).
-#' @param pos_color Bar colour for positive direction. Default \code{"#4393c3"}.
-#' @param neg_color Bar colour for negative direction. Default \code{"#d6604d"}.
-#' @param amb_color Bar colour for ambiguous features. Default \code{"#bbbbbb"}.
-#' @param pos_label Legend text for the positive-direction group. Default
+#' @param pos_color Bar color for positive direction. Default \code{"#4393c3"}.
+#' @param neg_color Bar color for negative direction. Default \code{"#d6604d"}.
+#' @param amb_color Bar color for ambiguous features. Default \code{"#bbbbbb"}.
+#' @param pos_label Legend text for the positive direction group. Default
 #'   \code{"increase"}.
-#' @param neg_label Legend text for the negative-direction group. Default
+#' @param neg_label Legend text for the negative direction group. Default
 #'   \code{"decrease"}.
 #' @param amb_label Legend text for the ambiguous group. Default
 #'   \code{"ambiguous"}.
@@ -941,13 +940,13 @@ plot_signed_importance.mossy_forest <- function(object,
          "or backend = \"R\" with r_shap = \"treeshap\" or \"fastshap\" ",
          "(r_shap = \"permutation\" has no per-observation SHAP values).")
 
-  # Keep the top_n features by |signed importance| (largest effect either way)
+  # Keep the top_n features by abs(signed importance) 
   if (!is.null(top_n) && is.finite(top_n) && nrow(df) > top_n)
     df <- df[order(-abs(df$signed_importance)), , drop = FALSE][seq_len(top_n), , drop = FALSE]
 
   df <- df[order(abs(df$signed_importance)), , drop = FALSE]
 
-  # Annotate: swap raw feature names for human-readable labels where supplied
+  # Annotate
   if (!is.null(labels)) {
     mapped <- unname(labels[as.character(df$feature_name)])
     df$feature_name <- ifelse(is.na(mapped), as.character(df$feature_name), mapped)
