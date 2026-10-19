@@ -1,16 +1,14 @@
-# Pure-R backend for mossyforest, does not require Python or reticulate.
+# Pure R backend for mossyforest, does not require Python or reticulate.
 #
 # Screening RFE and shadow stability selection can either use ranger or permutation
 # importance. Permutation importance is mainly for computation improvements and its accuracy
 # is not prioritized given these are intermediary steps. For the final importance step the 
-# user chooses one of three methods via the `r_shap` argument passed down from mf():
+# user chooses one of two methods via the `r_shap` argument passed down from mf():
 #
 #   "permutation" — ranger permutation VIM (scalar per feature, no extra pkg)
-#   "fastshap"    — approximate Shapley values via the fastshap package
-#                   (interaction_matrix = NULL)
 #   "treeshap"    — exact TreeSHAP via the treeshap package. Only method that computes an
 #                   interaction matrix identical in structure to the Python
-#                   backend's (diagonal = main effects, off-diagonal = pairwise)
+#                   backend's (diagonal = main effects, off diagonal = pairwise)
 #
 
 .mf_R_backend <- function(X, y,
@@ -26,12 +24,16 @@
                            seed,
                            CLASSIFICATION,
                            runtime,
-                           r_shap) {
+                           r_shap,
+                           compute_interactions = TRUE) {
 
   sc <- screen_params
   sl <- select_params
   if (is.null(nodesize)) nodesize <- if (CLASSIFICATION) 1L else 5L
-  if (verbose == 0L) options(warn = -1)
+  if (verbose == 0L) {
+    old_opts <- options(warn = -1)
+    on.exit(options(old_opts), add = TRUE)
+  }
 
   # Screening Phase
   if (verbose >= 1L) cat(sprintf("Screening [R / %s] ...\n", r_shap))
@@ -68,7 +70,7 @@
   module_assigns_surv <- surv_feat_to_mod[colnames(X_surv)]
   module_assigns_surv[is.na(module_assigns_surv)] <- "unknown"
 
-  # shadow-stability selection
+  # shadow stability selection
   if (verbose >= 1L) cat("Selecting stable features [R] ...\n")
   t0 <- proc.time()
 
@@ -155,10 +157,8 @@
     switch(r_shap,
       permutation = .mf_R_shap_permutation(final_rf, final_X, stable_features,
                                             verbose >= 1L),
-      fastshap    = .mf_R_shap_fastshap(final_rf, final_X, y, stable_features,
-                                         seed, verbose >= 1L),
       treeshap    = .mf_R_shap_treeshap(final_rf, final_X, stable_features,
-                                         verbose >= 1L)
+                                         verbose >= 1L, compute_interactions)
     )
   } else {
     list(
@@ -172,13 +172,13 @@
 
   # importance scores
   # For permutation: use ranger's permutation VIM (scalar per feature).
-  # For fastshap / treeshap: use mean |SHAP| per feature (matches Python output).
+  # For treeshap: use mean |SHAP| per feature (matches Python output).
   perm_vims <- if (!is.null(final_rf) && n_stable > 0L)
     final_rf$variable.importance[stable_features]
   else
     setNames(rep(NA_real_, n_stable), stable_features)
 
-  use_shap_vim <- r_shap %in% c("fastshap", "treeshap") &&
+  use_shap_vim <- identical(r_shap, "treeshap") &&
     !all(is.na(shap_matrix)) && ncol(shap_matrix) > 0L
 
   vim_for_report <- if (use_shap_vim)
@@ -207,7 +207,7 @@
     stringsAsFactors    = FALSE
   )
 
-  # Add per-observation SHAP statistics when a SHAP matrix is available
+  # Add per observation SHAP statistics when a SHAP matrix is available
   if (n_stable > 0L && !all(is.na(shap_matrix)) && ncol(shap_matrix) > 0L) {
     abs_mat     <- abs(shap_matrix)
     n_obs       <- nrow(shap_matrix)
@@ -231,7 +231,7 @@
     shap_final_list$stability_freq   <- round(
       stability_freq_vec[stable_features], 4L)
 
-    if (r_shap %in% c("fastshap", "treeshap")) {
+    if (identical(r_shap, "treeshap")) {
       dir_corr <- vapply(stable_features, function(feat) {
         xj <- as.numeric(final_X[[feat]]); sj <- shap_matrix[, feat]
         if (anyNA(sj) || stats::sd(xj) == 0 || stats::sd(sj) == 0) return(0)
@@ -256,7 +256,6 @@
   class(shap_obj) <- "explanation"
 
   if (verbose >= 1L) cat("Done.\n")
-  options(warn = 1)
 
   survivor_list_named <- setNames(
     lapply(names(survivor_list), function(mod) {
@@ -288,7 +287,7 @@
 # ranger permutation vim
 
 .mf_R_shap_permutation <- function(final_rf, final_X, stable_features, verbose) {
-  if (verbose) cat("  Using permutation VIM (no per-observation SHAP values).\n")
+  if (verbose) cat("  Using permutation VIM (no per observation SHAP values).\n")
   list(
     shap_matrix        = matrix(NA_real_, nrow = nrow(final_X),
                                 ncol     = length(stable_features),
@@ -298,64 +297,17 @@
 }
 
 
-# fastshap
-
-.mf_R_shap_fastshap <- function(final_rf, final_X, y, stable_features,
-                                 seed, verbose) {
-  if (!requireNamespace("fastshap", quietly = TRUE))
-    stop("Install the 'fastshap' package to use r_shap = 'fastshap'.",
-         call. = FALSE)
-
-  if (verbose) cat("  Computing SHAP values via fastshap (approximate) ...\n")
-
-  CLASSIFICATION <- is.factor(y)
-  pred_fn <- if (CLASSIFICATION)
-    function(object, newdata)
-      predict(object, data = newdata)$predictions[, 1L, drop = TRUE]
-  else
-    function(object, newdata)
-      predict(object, data = newdata)$predictions
-
-  set.seed(seed)
-  shap_mat <- tryCatch(
-    fastshap::explain(
-      object        = final_rf,
-      feature_names = stable_features,
-      X             = final_X,
-      pred_wrapper  = pred_fn,
-      nsim          = 50L
-    ),
-    error = function(e) {
-      message("fastshap failed: ", conditionMessage(e))
-      NULL
-    }
-  )
-
-  if (is.null(shap_mat)) {
-    message("Falling back to NA SHAP matrix. Check fastshap installation.")
-    return(list(
-      shap_matrix        = matrix(NA_real_, nrow = nrow(final_X),
-                                  ncol     = length(stable_features),
-                                  dimnames = list(NULL, stable_features)),
-      interaction_matrix = NULL
-    ))
-  }
-
-  out <- as.matrix(shap_mat)
-  colnames(out) <- stable_features
-  list(shap_matrix = out, interaction_matrix = NULL)
-}
-
-
 # treeshap exact TreeSHAP
 
-.mf_R_shap_treeshap <- function(final_rf, final_X, stable_features, verbose) {
+.mf_R_shap_treeshap <- function(final_rf, final_X, stable_features, verbose,
+                                 compute_interactions = TRUE) {
   if (!requireNamespace("treeshap", quietly = TRUE))
     stop("Install the 'treeshap' package to use r_shap = 'treeshap'.",
          call. = FALSE)
 
   if (verbose)
-    cat("  Computing exact TreeSHAP values via treeshap (+ interaction matrix) ...\n")
+    cat("  Computing exact TreeSHAP values via treeshap",
+        if (isTRUE(compute_interactions)) " (+ interaction matrix)", " ...\n", sep = "")
 
   unified <- tryCatch(
     treeshap::ranger.unify(final_rf, final_X),
@@ -363,16 +315,18 @@
       stop("treeshap::ranger.unify() failed: ", conditionMessage(e), call. = FALSE)
   )
 
-  ts <- tryCatch(
+  ts_plain <- function()
+    tryCatch(
+      treeshap::treeshap(unified, final_X, interactions = FALSE, verbose = FALSE),
+      error = function(e2)
+        stop("treeshap::treeshap() failed: ", conditionMessage(e2), call. = FALSE)
+    )
+  ts <- if (!isTRUE(compute_interactions)) ts_plain() else tryCatch(
     treeshap::treeshap(unified, final_X, interactions = TRUE, verbose = FALSE),
     error = function(e) {
       message("treeshap with interactions failed, retrying without: ",
               conditionMessage(e))
-      tryCatch(
-        treeshap::treeshap(unified, final_X, interactions = FALSE, verbose = FALSE),
-        error = function(e2)
-          stop("treeshap::treeshap() failed: ", conditionMessage(e2), call. = FALSE)
-      )
+      ts_plain()
     }
   )
 
@@ -392,7 +346,17 @@
   }
   shap_matrix <- shap_matrix[, stable_features, drop = FALSE]
 
-  # Interaction matrix (p × p) 
+  # For classification the SHAP values must refer to levels(y)[1], like the
+  # Python backend. Which class treeshap explains depends on its version, so
+  # orient the values by the model's own predicted probability of that class.
+  if (identical(final_rf$treetype, "Probability estimation") &&
+      !anyNA(shap_matrix)) {
+    p1 <- predict(final_rf, data = final_X)$predictions[, 1L]
+    s  <- suppressWarnings(stats::cor(rowSums(shap_matrix), p1))
+    if (is.finite(s) && s < 0) shap_matrix <- -shap_matrix
+  }
+
+  # Interaction matrix (p × p)
   # treeshap stores interactions as [p, p, n] (features × features × obs).
   interaction_matrix <- if (!is.null(ts$interactions)) {
     int_arr <- ts$interactions          # [p, p, n]
@@ -431,7 +395,7 @@
   base <- switch(rule,
     sqrt     = sqrt(n_features),
     p_over_3 = n_features / 3,
-    if (classification) n_features / 3 else sqrt(n_features))   # "auto"
+    if (classification) sqrt(n_features) else n_features / 3)   # "auto"
   max(1L, min(ceiling(mtry_factor * base), n_features))
 }
 
@@ -493,8 +457,8 @@
   CLASSIFICATION <- is.factor(y)
   use_ts         <- identical(r_shap, "treeshap")
   module_list    <- unique(module_membership)
-  # NOTE: unlike the Python backend, the pure-R backend applies NO blockwise
-  # pre-reduction (max_modsize is ignored)
+  # NOTE: unlike the Python backend, the pure R backend applies NO blockwise
+  # pre reduction (max_modsize is ignored)
 
   survivor_list <- vector("list", length(module_list))
   names(survivor_list) <- module_list
@@ -532,7 +496,8 @@
       vims   <- if (use_ts)
         .vim_treeshap_ranger(rf_step, X_mod[, current_feats, drop = FALSE], current_feats)
       else rf_step$variable.importance
-      n_drop <- max(1L, ceiling(sc$drop_fraction * cp))
+      # drop_fraction of the current set, but never below the keep target
+      n_drop <- min(max(1L, ceiling(sc$drop_fraction * cp)), cp - target_keep)
       drop_i <- order(vims)[seq_len(n_drop)]
       current_feats <- setdiff(current_feats, current_feats[drop_i])
     }
@@ -575,11 +540,13 @@
 }
 
 
-# cfRes cross-fitted residualization 
+# cfRes cross fitted residualization 
 .cross_fit_residuals_R <- function(X_corr, y_num, k_folds = 5L, ntree = 300L,
                                     mtry_factor = 1, nodesize = 5L,
                                     seed = 42L, num_processors = 1L) {
   n <- length(y_num); p_corr <- ncol(X_corr)
+  old_seed <- .save_seed()
+  on.exit(.restore_seed(old_seed), add = TRUE)
   set.seed(seed)
   perm     <- sample.int(n)
   fold_ids <- integer(n)
@@ -637,6 +604,8 @@
     np <- length(pool_feats)
     freq_map <- setNames(integer(np), pool_feats)
     prev_freqs <- NULL; n_done <- 0L
+    old_seed <- .save_seed()
+    on.exit(.restore_seed(old_seed), add = TRUE)
     for (b in seq_len(sl$n_reps)) {
       bseed <- pool_seed + b * 97L
       set.seed(bseed)
@@ -702,7 +671,7 @@
     ps <- pool_specs[[si]]
     if (length(ps$feats) == 0L) next
 
-    # cfRes-residualized target 
+    # cfRes residualized target 
     y_pool <- y; classif_pool <- CLASSIFICATION; use_resid <- FALSE
     if (isTRUE(sl$use_cfres)) {
       if (identical(sl$cfres_scope, "all_modules")) {

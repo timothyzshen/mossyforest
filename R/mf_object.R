@@ -7,10 +7,10 @@
 #' @param final_X         Data frame of features in the stable set.
 #' @param module_membership Data frame mapping each feature to its module.
 #' @param WGCNA_object    WGCNA output object, or \code{NULL}.
-#' @param survivor_list   Per-module screening survivors.
+#' @param survivor_list   Per module screening survivors.
 #' @param selection_list  Feature lists at each selection iteration.
 #' @param final_shap      Data frame of stable features with mean absolute SHAP,
-#'                        95 percent CIs, and shadow-stability frequencies.
+#'                        95 percent CIs, and shadow stability frequencies.
 #' @param shap_obj        List with elements \code{shapley_values} (signed SHAP
 #'                        matrix, samples x stable features) and
 #'                        \code{interaction_matrix} (mean absolute TreeSHAP
@@ -66,13 +66,30 @@ mossy_forest <- function(final_rf, final_X, module_membership,
 
 #' Print a Mossy Forest Object
 #'
-#' Prints the stable feature set with mean abs(SHAP) importance scores and
-#' shadow stability frequencies.
+#' Prints the stable feature set with final feature importance scores and
+#' shadow stability selection frequencies.
 #'
 #' @param x   A \code{mossy_forest} object.
 #' @param ... Ignored.
 #'
 #' @return Invisibly returns \code{x}.
+#' @examples
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+#' print(fit)
 #' @export
 print.mossy_forest <- function(x, ...) {
   cat("--- Mossy Forest ---\n")
@@ -94,9 +111,28 @@ print.mossy_forest <- function(x, ...) {
 #' @param object   A \code{mossy_forest} object.
 #' @param new_data A matrix or data frame of new observations. Column names
 #'                 must match the training features.
-#' @param ...      Additional arguments passed to \code{ranger:::predict}.
+#' @param ...      Additional arguments passed to \code{\link[ranger]{predict.ranger}}.
 #'
-#' @return A \code{ranger} prediction object.
+#' @return A \code{ranger} prediction object. Predictions always come from the
+#'   \code{ranger} forest refit on the stable features, whichever backend
+#'   selected them.
+#' @examples
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+#' predict(fit, X[1:5, ])$predictions
 #' @export
 predict.mossy_forest <- function(object, new_data, ...) {
   predict(object$final_rf, data = new_data, ...)

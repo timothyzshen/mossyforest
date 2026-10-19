@@ -232,7 +232,7 @@ def _permutation_importance(rf):
 def _compute_mtry(n_features, mtry_factor, classification, rule="auto"):
     """
     Features considered per split.
-      rule="auto"     - p/3 (classification) / sqrt(p) (regression) 
+      rule="auto"     - sqrt(p) (classification) / p/3 (regression)
       rule="sqrt"     - sqrt(p) for both
       rule="p_over_3" - p/3 for both
     """
@@ -241,7 +241,7 @@ def _compute_mtry(n_features, mtry_factor, classification, rule="auto"):
     elif rule == "p_over_3":
         base = n_features / 3.0
     else:
-        base = (n_features / 3.0) if classification else math.sqrt(n_features)
+        base = math.sqrt(n_features) if classification else (n_features / 3.0)
     return min(max(1, math.ceil(mtry_factor * base)), n_features)
 
 
@@ -710,6 +710,10 @@ def run_select_rfe(X_surv_mat, y, feature_names_surv,
             pi_thr_unassigned = None
 
     unassigned_set = set(str(m) for m in unassigned_modules) if unassigned_modules else set()
+    # Deterministic feature order: set iteration order changes between Python
+    # processes (string hashing), which would change the final forest's columns.
+    _feat_order = {str(f): i for i, f in enumerate(feature_names_surv)}
+    _by_order = lambda names: sorted(set(names), key=lambda f: _feat_order.get(f, len(_feat_order)))
     if module_assignments_surv is not None:
         raw_mods    = [str(m) for m in module_assignments_surv]
         name_to_mod = dict(zip(orig_feature_names, raw_mods))
@@ -871,7 +875,7 @@ def run_select_rfe(X_surv_mat, y, feature_names_surv,
             _shadow_on_cols(unassigned_idx, "unassigned", seed_offset=1, is_unassigned=True)
 
         freq_map_all = {**freq_corr, **freq_unassigned}
-        stable_union = list(set(stable_corr) | set(stable_unassigned))
+        stable_union = _by_order(list(stable_corr) + list(stable_unassigned))
 
         # ── pool stability data for plotting ─────────────────────────────────
         pool_stability = []
@@ -973,7 +977,7 @@ def run_select_rfe(X_surv_mat, y, feature_names_surv,
                         'elbow_rank'  : elbow_mod,
                     })
 
-            stable_union = list(set(stable_union))
+            stable_union = _by_order(stable_union)
 
     else:
         raise ValueError(f"shadow_mode must be 'split' or 'within_module', "

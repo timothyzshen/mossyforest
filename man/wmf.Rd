@@ -17,7 +17,8 @@ wmf(
   verbose = 1L,
   seed = as.integer(Sys.time()),
   backend = "python",
-  r_shap = "permutation"
+  r_shap = "permutation",
+  compute_interactions = TRUE
 )
 }
 \arguments{
@@ -43,7 +44,7 @@ for classification and \code{5} for regression.}
 \item{num_processors}{Number of parallel threads for random forests.
 Default \code{1}.}
 
-\item{max_modsize}{Maximum module size before blockwise pre-reduction
+\item{max_modsize}{Maximum module size before blockwise pre reduction
 is applied (Python backend only). Default \code{5000}.}
 
 \item{verbose}{Verbose level. \code{0} = silent; \code{1} =
@@ -67,28 +68,54 @@ backend. One of:
 \describe{
 \item{\code{"permutation"}}{Ranger permutation variable importance
 (default). No extra packages needed. Returns a scalar VIM per
-feature; per-observation SHAP values and SHAP-based plots are
+feature; per observation SHAP values and SHAP based plots are
 unavailable.}
-\item{\code{"fastshap"}}{Approximate Shapley values via
-\pkg{fastshap} (\code{nsim = 50} permutations). Requires the
-\pkg{fastshap} package. No interaction matrix.}
 \item{\code{"treeshap"}}{Exact TreeSHAP values via the R
 \pkg{treeshap} package. Requires \pkg{treeshap}. Also computes a
 \eqn{p \times p} interaction matrix, enabling
 \code{detect_interaction()} and
 \code{plot_potential_interactions()}.}
 }}
+
+\item{compute_interactions}{Logical. If \code{TRUE} (default), the TreeSHAP
+interaction matrix is computed by the Python backend
+and by the pure R backend with
+\code{r_shap = "treeshap"}. Set \code{FALSE} to skip
+it (faster); \code{detect_interaction()} and
+\code{plot_potential_interactions()} then have
+nothing to use. It has no effect with
+\code{r_shap = "permutation"}, which never computes
+interactions.}
 }
 \value{
 An object of class \code{\link{mossy_forest}} with an additional
 \code{$WGCNA_object} slot containing the raw WGCNA output.
 }
 \description{
-Runs a Weighted Gene Co-expression Network Analysis (WGCNA) to derive
+Runs a Weighted Gene Co expression Network Analysis (WGCNA) to derive
 module membership, then passes the result to \code{\link{mf}}.
+}
+\examples{
+\dontshow{if (requireNamespace("WGCNA", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\donttest{
+# Two blocks of correlated features; WGCNA finds the modules
+set.seed(1)
+n <- 30
+z1 <- rnorm(n); z2 <- rnorm(n)
+block <- function(k, zz) as.data.frame(replicate(k, zz + rnorm(n, sd = 0.4)))
+X <- cbind(block(10, z1), block(10, z2))
+colnames(X) <- paste0("g", seq_len(ncol(X)))
+y <- z1 - z2 + rnorm(n, sd = 0.3)
+fit <- wmf(X, y, WGCNA_params = WGCNA_control(power = 6, min_features = 6),
+           screen_params = screen_control(min_ntree = 30),
+           select_params = select_control(n_reps = 3, min_ntree = 30),
+           final_ntree = 30, backend = "R", verbose = 0, seed = 1)
+table(fit$WGCNA_object$colors)
+}
+\dontshow{\}) # examplesIf}
 }
 \references{
 Zhang, B., & Horvath, S. (2005). A general framework for weighted gene
-co-expression network analysis. \emph{Statistical Applications in Genetics
+co expression network analysis. \emph{Statistical Applications in Genetics
 and Molecular Biology}, 4(1), Article 17.
 }

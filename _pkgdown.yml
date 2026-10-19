@@ -1,0 +1,57 @@
+url: https://timothyzshen.github.io/mossyforest/
+template:
+  bootstrap: 5
+  bootswatch: cosmo
+  bslib:
+    primary: "#000000"
+    base_font: {google: "Source Sans Pro"}
+    heading_font: {google: "Source Sans Pro"}
+    headings-font-weight: 1200
+
+reference:
+  - title: Fit a model
+    desc: Run Mossy Forest feature selection, with modules supplied by you or detected with WGCNA.
+    contents:
+      - mf
+      - wmf
+      - mf_setup
+
+  - title: Control parameters
+    desc: Settings for the screening, selection and WGCNA steps.
+    contents:
+      - screen_control
+      - select_control
+      - WGCNA_control
+
+  - title: Work with a fitted object
+    contents:
+      - print.mossy_forest
+      - predict.mossy_forest
+      - detect_interaction
+
+  - title: Feature importance plots
+    contents:
+      - plot_importance
+      - plot_signed_importance
+      - plot_elbow
+
+  - title: Stability and module plots
+    contents:
+      - plot_stability
+      - plot_stability_elbow
+      - plot_modules
+
+  - title: Plots for single observations
+    contents:
+      - plot_waterfall
+      - plot_force
+      - plot_decisions
+
+  - title: Interaction plots
+    contents:
+      - plot_potential_interactions
+
+  - title: Data
+    contents:
+      - leukemia
+      - wdi

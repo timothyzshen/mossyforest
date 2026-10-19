@@ -9,11 +9,11 @@
 #'                       screening. Default \code{0.50}.
 #' @param mtry_factor    Multiplier applied to the \code{mtry_rule}'s base value
 #'                       to derive \code{mtry} for each screening random forest
-#'                       (\code{mtry = ceiling(mtry_factor * base)}, contrained to
+#'                       (\code{mtry = ceiling(mtry_factor * base)}, constrained to
 #'                       \code{[1, p]}). Default \code{1}.
 #' @param mtry_rule      How \code{mtry} is derived from the feature count
-#'                       \code{p}. \code{"auto"} (default) uses \code{p/3} for
-#'                       classification and \code{sqrt(p)} for regression.
+#'                       \code{p}. \code{"auto"} (default) uses \code{sqrt(p)} for
+#'                       classification and \code{p/3} for regression.
 #'                       \code{"sqrt"} uses \code{sqrt(p)} for classification
 #'                       AND regression. \code{"p_over_3"} uses \code{p/3} for
 #'                       classification AND regression.
@@ -23,6 +23,9 @@
 #'                       Default \code{1}.
 #'
 #' @return An object of class \code{screen_control}.
+#' @examples
+#' screen_control()
+#' screen_control(drop_fraction = 0.1, keep_fraction = 0.3, min_ntree = 200)
 #' @export
 #' @seealso \code{\link{select_control}}, \code{\link{mf}}
 screen_control <- function(drop_fraction = 0.25,
@@ -66,18 +69,20 @@ screen_control <- function(drop_fraction = 0.25,
 #'                           Default \code{0.60}.
 #' @param pi_thr_unassigned  Stability threshold for the unassigned pool.
 #'                           \code{NULL} (default) uses an automatic elbow
-#'                           detection rule. We recommend keep this \code{NULL}.
+#'                           detection rule. We recommend keeping this \code{NULL}.
 #' @param shadow_percentile  Percentile of the shadow feature distribution used
 #'                           as the importance threshold within each replicate.
 #'                           Default \code{95}.
 #' @param unassigned_modules  Character vector of module names treated as
 #'                           the unassigned pool (e.g. \code{"M10_unassigned"}).
-#'                           \code{NULL} disables split-pool logic.
+#'                           Names must match values in \code{module_membership};
+#'                           a name that matches no module gives a warning.
+#'                           \code{NULL} disables split pool logic.
 #' @param use_cfres   Logical. If \code{TRUE}, a cross fitted random
 #'                           forest is used to residualize \code{y} before the
-#'                           unassigned-pool stability step, reducing confounding
+#'                           unassigned pool stability step, reducing confounding
 #'                           from correlated modules. Default \code{FALSE}.
-#' @param cfres_n_folds        Number of cross-fitting folds for cfRes
+#' @param cfres_n_folds        Number of cross fitting folds for cfRes
 #'                           residualization. Default \code{5}.
 #' @param cfres_ntree          Trees per fold forest in cfRes residualization.
 #'                           Default \code{300}.
@@ -90,7 +95,7 @@ screen_control <- function(drop_fraction = 0.25,
 #' @param mtry_rule        How \code{mtry} is derived from the feature count.
 #'                         One of \code{"auto"} (default), \code{"sqrt"},
 #'                         \code{"p_over_3"}. See \code{\link{screen_control}}.
-#'                         Unlike screening, a single stability-selection run
+#'                         Unlike screening, a single stability selection run
 #'                         can fit BOTH classification and regression forests
 #'                         even though \code{y} is one fixed type. For instance, when
 #'                         \code{use_cfres = TRUE}, any pool that gets
@@ -115,6 +120,10 @@ screen_control <- function(drop_fraction = 0.25,
 #'                         between batches. Default \code{10}.
 #'
 #' @return An object of class \code{select_control}.
+#' @examples
+#' select_control()
+#' # cross fitted residualization of the outcome, with a stricter threshold
+#' select_control(n_reps = 20, pi_thr = 0.7, use_cfres = TRUE)
 #' @export
 #' @seealso \code{\link{screen_control}}, \code{\link{mf}}
 select_control <- function(mtry_factor      = 1,
@@ -171,10 +180,10 @@ select_control <- function(mtry_factor      = 1,
 
 #' WGCNA Parameter Organization
 #'
-#' Creates a parameter object for the WGCNA co-expression network step used
+#' Creates a parameter object for the WGCNA co expression network step used
 #' by \code{\link{wmf}}.
 #'
-#' @param power        Soft-thresholding power passed to
+#' @param power        Soft thresholding power passed to
 #'                     \code{\link[WGCNA]{blockwiseModules}}. Default \code{6}.
 #' @param min_features Minimum module size, passed to
 #'                     \code{\link[WGCNA]{blockwiseModules}} as
@@ -184,6 +193,10 @@ select_control <- function(mtry_factor      = 1,
 #'                     \code{\link[WGCNA]{blockwiseModules}}.
 #'
 #' @return An object of class \code{WGCNA_control}.
+#' @examples
+#' WGCNA_control()
+#' # extra arguments are passed on to WGCNA::blockwiseModules()
+#' WGCNA_control(power = 8, min_features = 30, deepSplit = 2)
 #' @export
 WGCNA_control <- function(power = 6, min_features = 20, ...) {
   obj <- list(

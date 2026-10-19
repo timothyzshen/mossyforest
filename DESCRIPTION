@@ -1,12 +1,19 @@
 Package: mossyforest
-Title: Mossy Forest
-Version: 1.0.0
-Authors@R:
-    person("Timothy", "Shen", , "tzshen@g.ucla.edu", role = c("aut", "cre"))
-Description: An interpretable network aware random forest feature selection framework for
-    high-dimensional and correlated data. Combines recursive feature elimination,
-    WGCNA, and shadow stability selection through TreeSHAP values. A Python environment with scikit-learn, shap, and numpy is
-    required. It can be configured through mf_setup()
+Title: Network Aware Stability Selection with Random Forests
+Version: 0.1.0
+Authors@R: c(
+    person("Timothy", "Shen", , "tzshen@g.ucla.edu", role = c("aut", "cre", "cph")),
+    person("Christina", "Ramirez", , "cr@ucla.edu", role = "aut")
+    )
+Description: An interpretable, network aware random forest feature selection
+    framework for high dimensional and correlated data. It combines
+    module stratified recursive feature elimination, shadow stability selection,
+    and 'TreeSHAP' (Tree SHapley Additive exPlanations) importance, with
+    modules either provided by the user or derived with 'WGCNA' (weighted gene
+    co expression network analysis). The default backend requires a 'Python'
+    environment with 'scikit-learn', 'shap', and 'numpy', which can be
+    configured with mf_setup(). A pure 'R' backend based on 'ranger' is also
+    available.
 Imports:
     grDevices,
     reticulate (>= 1.35),
@@ -18,8 +25,7 @@ Imports:
     stats,
     utils
 License: GPL (>= 3)
-URL: https://github.com/timothyzshen/mossyforest,
-    https://github.com/timothyzshen/mossyforest-py
+URL: https://github.com/timothyzshen/mossyforest, https://github.com/timothyzshen/mossyforest-py
 BugReports: https://github.com/timothyzshen/mossyforest/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -30,10 +36,10 @@ SystemRequirements: Python (>= 3.9) with scikit-learn, shap, and numpy
 LazyData: true
 Suggests:
     WGCNA,
-    fastshap,
     treeshap,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 VignetteBuilder:
     knitr

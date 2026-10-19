@@ -1,6 +1,6 @@
 # Guards the R control objects against drift from the Python reference package
 # (mossyforest_py). If someone reorders or renames a field on one side, these
-# fail loudly instead of the divergence going unnoticed. The expected orders
+# fail instead of the divergence going unnoticed. The expected orders
 # below are copied verbatim from src/mossyforest/parameters.py.
 
 test_that("screen_control field order matches the Python reference", {

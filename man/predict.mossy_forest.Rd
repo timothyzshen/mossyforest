@@ -12,12 +12,32 @@
 \item{new_data}{A matrix or data frame of new observations. Column names
 must match the training features.}
 
-\item{...}{Additional arguments passed to \code{ranger:::predict}.}
+\item{...}{Additional arguments passed to \code{\link[ranger]{predict.ranger}}.}
 }
 \value{
-A \code{ranger} prediction object.
+A \code{ranger} prediction object. Predictions always come from the
+\code{ranger} forest refit on the stable features, whichever backend
+selected them.
 }
 \description{
 Generates predictions from the final random forest fitted on the stable
 feature set.
+}
+\examples{
+# A small simulated regression problem with two modules of features
+set.seed(1)
+n <- 60
+z <- rnorm(n)
+X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+                a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+                b3 = rnorm(n))
+y <- z + rnorm(n, sd = 0.3)
+membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+
+# The pure R backend needs no Python installation
+fit <- mf(X, y, module_membership = membership,
+          screen_params = screen_control(min_ntree = 50),
+          select_params = select_control(n_reps = 10, min_ntree = 50),
+          final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+predict(fit, X[1:5, ])$predictions
 }

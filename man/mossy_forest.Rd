@@ -29,12 +29,12 @@ feature set.}
 
 \item{WGCNA_object}{WGCNA output object, or \code{NULL}.}
 
-\item{survivor_list}{Per-module screening survivors.}
+\item{survivor_list}{Per module screening survivors.}
 
 \item{selection_list}{Feature lists at each selection iteration.}
 
 \item{final_shap}{Data frame of stable features with mean absolute SHAP,
-95 percent CIs, and shadow-stability frequencies.}
+95 percent CIs, and shadow stability frequencies.}
 
 \item{shap_obj}{List with elements \code{shapley_values} (signed SHAP
 matrix, samples x stable features) and

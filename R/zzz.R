@@ -11,7 +11,8 @@
 #' Configure the Python environment for Mossy Forest
 #'
 #' Tells Mossy Forest which Python installation to use for its backend.
-#' Call this once at the start of each R session before using \code{\link{mf}}.
+#' Call this once at the start of each R session before using \code{\link{mf}}
+#' with \code{backend = "python"}. The pure R backend does not need it.
 #'
 #' @param python     Path to a Python binary. Passed to
 #'                   \code{reticulate::use_python()}.
@@ -52,14 +53,35 @@ mf_setup <- function(python = NULL, condaenv = NULL, virtualenv = NULL) {
   invisible(NULL)
 }
 
+# Internal: keep seeding inside mossyforest from changing the caller's own
+# random number stream. Save the state on entry, restore it with on.exit().
+.save_seed <- function() {
+  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+    get(".Random.seed", envir = globalenv(), inherits = FALSE)
+}
+
+.restore_seed <- function(old) {
+  if (is.null(old)) {
+    if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+      rm(".Random.seed", envir = globalenv())
+  } else {
+    assign(".Random.seed", old, envir = globalenv())
+  }
+  invisible(NULL)
+}
+
 # Internal, load the bundled Python backend into .mf_py
 .load_python_backend <- function() {
   if (!requireNamespace("reticulate", quietly = TRUE))
     stop("Package 'reticulate' is required. Install with: install.packages('reticulate')",
          call. = FALSE)
 
-  if (!nzchar(Sys.getenv("PYTHONIOENCODING")))
+  # Python reads this once at start up; keep it set only while the backend
+  # loads, then restore the caller's environment.
+  if (!nzchar(Sys.getenv("PYTHONIOENCODING"))) {
     Sys.setenv(PYTHONIOENCODING = "utf-8")
+    on.exit(Sys.unsetenv("PYTHONIOENCODING"), add = TRUE)
+  }
 
   py_file <- system.file("python", "mf_python_backend.py",
                           package = "mossyforest")

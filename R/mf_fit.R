@@ -8,6 +8,9 @@
 #'                          classification).
 #' @param module_membership A named character vector assigning each feature in
 #'                          \code{X} to a module. Names must match \code{colnames(X)}.
+#'                          Modules named in \code{select_control(unassigned_modules)}
+#'                          form the unassigned pool, which is selected with its own
+#'                          elbow based threshold; all other modules use \code{pi_thr}.
 #' @param screen_params     Screening parameters. See
 #'                          \code{\link{screen_control}}.
 #' @param select_params     Selection parameters. See
@@ -18,17 +21,22 @@
 #'                          for classification and \code{5} for regression.
 #' @param num_processors    Number of parallel threads for random forests.
 #'                          Default \code{1}.
-#' @param max_modsize       Maximum module size before blockwise pre-reduction
+#' @param max_modsize       Maximum module size before blockwise pre reduction
 #'                          is applied (Python backend only). Default \code{5000}.
 #' @param verbose           Verbose level. \code{0} = silent; \code{1} =
 #'                          progress messages; \code{2} = detailed output.
 #'                          Default \code{1}.
 #' @param seed              Integer random seed for reproducibility. Defaults to
 #'                          current system time.
-#' @param compute_interactions Logical. If \code{TRUE} (default), the Python
-#'                          backend computes the TreeSHAP interaction matrix.
-#'                          Set \code{FALSE} to skip it (faster). Ignored by the
-#'                          pure-R backend unless \code{r_shap = "treeshap"}.
+#' @param compute_interactions Logical. If \code{TRUE} (default), the TreeSHAP
+#'                          interaction matrix is computed by the Python backend
+#'                          and by the pure R backend with
+#'                          \code{r_shap = "treeshap"}. Set \code{FALSE} to skip
+#'                          it (faster); \code{detect_interaction()} and
+#'                          \code{plot_potential_interactions()} then have
+#'                          nothing to use. It has no effect with
+#'                          \code{r_shap = "permutation"}, which never computes
+#'                          interactions.
 #' @param backend           Computation backend. \code{"python"} (default) uses
 #'                          a Python scikit-learn / SHAP engine via
 #'                          \pkg{reticulate} and provides exact TreeSHAP values
@@ -42,11 +50,8 @@
 #'   \describe{
 #'     \item{\code{"permutation"}}{Ranger permutation variable importance
 #'       (default). No extra packages needed. Returns a scalar VIM per
-#'       feature; per-observation SHAP values and SHAP-based plots are
+#'       feature; per observation SHAP values and SHAP based plots are
 #'       unavailable.}
-#'     \item{\code{"fastshap"}}{Approximate Shapley values via
-#'       \pkg{fastshap} (\code{nsim = 50} permutations). Requires the
-#'       \pkg{fastshap} package. No interaction matrix.}
 #'     \item{\code{"treeshap"}}{Exact TreeSHAP values via the R
 #'       \pkg{treeshap} package. Requires \pkg{treeshap}. Also computes a
 #'       \eqn{p \times p} interaction matrix, enabling
@@ -60,7 +65,7 @@
 #' Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C.,
 #'   Newey, W., & Robins, J. (2018). Double/cross-fit residualed machine learning for
 #'   treatment and structural parameters. \emph{The Econometrics Journal},
-#'   21(1), C1–C68.
+#'   21(1), C1-C68.
 #'
 #' Lundberg, S. M., & Lee, S. I. (2017). A unified model for interpreting
 #'   predictions. \emph{NeurIPS}, 30.
@@ -69,19 +74,29 @@
 #' @import dplyr
 #'
 #' @examples
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+#' print(fit)
+#' head(fit$final_SHAP)
+#'
 #' \dontrun{
-#'   mf_setup(condaenv = "sfenv")
-#'
-#'   data(iris)
-#'   X   <- iris[, 1:4]
-#'   y   <- iris$Species
-#'   mem <- setNames(c("A","A","B","B"), colnames(X))
-#'
-#'   res <- mf(X, y, module_membership = mem,
-#'             screen_params = screen_control(min_ntree = 100),
-#'             select_params = select_control(n_reps = 25))
-#'   print(res)
-#'   plot_importance(res)
+#' # The Python backend (exact TreeSHAP) needs a configured Python environment
+#' mf_setup(condaenv = "sfenv")
+#' fit_py <- mf(X, y, module_membership = membership, backend = "python")
+#' plot_importance(fit_py)
 #' }
 mf <- function(X, y,
                module_membership,
@@ -98,11 +113,13 @@ mf <- function(X, y,
                r_shap          = "permutation") {
 
   backend <- match.arg(backend, c("python", "R"))
-  r_shap  <- match.arg(r_shap,  c("permutation", "fastshap", "treeshap"))
+  r_shap  <- match.arg(r_shap,  c("permutation", "treeshap"))
 
   # load Python backend
   if (backend == "python") .ensure_python()
 
+  old_seed <- .save_seed()
+  on.exit(.restore_seed(old_seed), add = TRUE)
   set.seed(seed)
 
   # validation
@@ -114,11 +131,25 @@ mf <- function(X, y,
   if (is.null(names(module_membership)))
     names(module_membership) <- colnames(X)[seq_along(module_membership)]
 
+  # an unassigned_modules name that matches no module would be silently ignored
+  um_missing <- setdiff(as.character(select_params$unassigned_modules),
+                        as.character(module_membership))
+  if (length(um_missing) > 0L)
+    warning("`unassigned_modules` not found in `module_membership`: ",
+            paste(sQuote(um_missing, FALSE), collapse = ", "),
+            ". Those features are treated as an ordinary module, not as an ",
+            "unassigned pool. Modules present: ",
+            paste(sort(unique(as.character(module_membership))), collapse = ", "),
+            ".", call. = FALSE)
+
   CLASSIFICATION <- is.factor(y)
   if (is.null(nodesize))
     nodesize <- if (CLASSIFICATION) 1L else 5L
 
-  if (verbose == 0L) options(warn = -1)
+  if (verbose == 0L) {
+    old_opts <- options(warn = -1)
+    on.exit(options(old_opts), add = TRUE)
+  }
 
   sc <- screen_params
   sl <- select_params
@@ -128,9 +159,7 @@ mf <- function(X, y,
 
   runtime <- list(Screen = NA_real_, Selection = NA_real_, Final_RF = NA_real_)
 
-  # ══════════════════════════════════════════════════════════════════════════════
   # R backend, pure ranger, no Python required
-  # ══════════════════════════════════════════════════════════════════════════════
   if (backend == "R") {
     return(.mf_R_backend(
       X = X, y = y,
@@ -146,7 +175,8 @@ mf <- function(X, y,
       seed                     = seed,
       CLASSIFICATION           = CLASSIFICATION,
       runtime                  = runtime,
-      r_shap                   = r_shap
+      r_shap                   = r_shap,
+      compute_interactions     = compute_interactions
     ))
   }
 
@@ -281,8 +311,8 @@ mf <- function(X, y,
       as.numeric(unlist(select_py$shap_matrix)),
       nrow     = nrow(X_surv),
       ncol     = n_stable,
-      byrow    = TRUE,   # Python .tolist() is row-major, fill by row to preserve
-                         # per-observation alignment (else the matrix is scrambled)
+      byrow    = TRUE,   # Python .tolist() is row major, fill by row to preserve
+                         # per observation alignment (else the matrix is scrambled)
       dimnames = list(NULL, stable_features)
     )
   } else {
@@ -295,7 +325,7 @@ mf <- function(X, y,
       as.numeric(unlist(select_py$interaction_matrix)),
       nrow     = n_stable,
       ncol     = n_stable,
-      byrow    = TRUE,   # row-major from Python 
+      byrow    = TRUE,   # row major from Python 
       dimnames = list(stable_features, stable_features)
     )
     m
@@ -311,7 +341,7 @@ mf <- function(X, y,
     )
   })
 
-  # per pool shadow-stability data 
+  # per pool shadow stability data 
   stability_data <- if (!is.null(select_py$pool_stability) &&
                          length(select_py$pool_stability) > 0L) {
     pool_rows <- lapply(select_py$pool_stability, function(p) {
@@ -357,7 +387,7 @@ mf <- function(X, y,
     base <- switch(sl$mtry_rule,
       sqrt     = sqrt(current_p),
       p_over_3 = current_p / 3,
-      if (CLASSIFICATION) current_p / 3 else sqrt(current_p))   # "auto"
+      if (CLASSIFICATION) sqrt(current_p) else current_p / 3)   # "auto"
     max(1L, min(ceiling(sl$mtry_factor * base), current_p))
   }
 
@@ -391,7 +421,7 @@ mf <- function(X, y,
     stringsAsFactors    = FALSE
   )
 
-  # Add per-observation SHAP CIs if matrix is available
+  # Add per observation SHAP CIs if matrix is available
   if (ncol(shap_matrix) > 0L) {
     feat_ord  <- stable_features
     valid_cols <- feat_ord[feat_ord %in% colnames(shap_matrix)]
@@ -439,7 +469,6 @@ mf <- function(X, y,
   class(shap_obj) <- "explanation"
 
   if (verbose >= 1L) cat("Done.\n")
-  options(warn = 1)
 
   mossy_forest(
     final_rf          = final_rf,
@@ -460,7 +489,7 @@ mf <- function(X, y,
 
 #' Mossy Forest with WGCNA Module Detection
 #'
-#' Runs a Weighted Gene Co-expression Network Analysis (WGCNA) to derive
+#' Runs a Weighted Gene Co expression Network Analysis (WGCNA) to derive
 #' module membership, then passes the result to \code{\link{mf}}.
 #'
 #' @inheritParams mf
@@ -469,12 +498,29 @@ mf <- function(X, y,
 #' @return An object of class \code{\link{mossy_forest}} with an additional
 #'   \code{$WGCNA_object} slot containing the raw WGCNA output.
 #'
+#' @examplesIf requireNamespace("WGCNA", quietly = TRUE)
+#' \donttest{
+#' # Two blocks of correlated features; WGCNA finds the modules
+#' set.seed(1)
+#' n <- 30
+#' z1 <- rnorm(n); z2 <- rnorm(n)
+#' block <- function(k, zz) as.data.frame(replicate(k, zz + rnorm(n, sd = 0.4)))
+#' X <- cbind(block(10, z1), block(10, z2))
+#' colnames(X) <- paste0("g", seq_len(ncol(X)))
+#' y <- z1 - z2 + rnorm(n, sd = 0.3)
+#' fit <- wmf(X, y, WGCNA_params = WGCNA_control(power = 6, min_features = 6),
+#'            screen_params = screen_control(min_ntree = 30),
+#'            select_params = select_control(n_reps = 3, min_ntree = 30),
+#'            final_ntree = 30, backend = "R", verbose = 0, seed = 1)
+#' table(fit$WGCNA_object$colors)
+#' }
+#'
 #' @export
 #' @importFrom ranger ranger
 #'
 #' @references
 #' Zhang, B., & Horvath, S. (2005). A general framework for weighted gene
-#'   co-expression network analysis. \emph{Statistical Applications in Genetics
+#'   co expression network analysis. \emph{Statistical Applications in Genetics
 #'   and Molecular Biology}, 4(1), Article 17.
 wmf <- function(X, y,
                 WGCNA_params  = WGCNA_control(power = 6),
@@ -487,12 +533,15 @@ wmf <- function(X, y,
                 verbose       = 1L,
                 seed          = as.integer(Sys.time()),
                 backend       = "python",
-                r_shap        = "permutation") {
+                r_shap        = "permutation",
+                compute_interactions = TRUE) {
 
   if (!requireNamespace("WGCNA", quietly = TRUE))
     stop("Package 'WGCNA' is required for wmf(). Install it first.", call. = FALSE)
-  if (!"WGCNA" %in% .packages())
+  if (!"package:WGCNA" %in% search()) {
     attachNamespace("WGCNA")
+    on.exit(detach("package:WGCNA", unload = FALSE), add = TRUE)
+  }
 
   if (!(is.vector(y) || is.factor(y)))
     stop("y must be a numeric vector or factor.", call. = FALSE)
@@ -533,7 +582,8 @@ wmf <- function(X, y,
     verbose           = verbose,
     seed              = seed,
     backend           = backend,
-    r_shap            = r_shap
+    r_shap            = r_shap,
+    compute_interactions = compute_interactions
   )
 
   out$WGCNA_object <- bwise

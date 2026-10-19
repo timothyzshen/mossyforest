@@ -106,7 +106,11 @@ test_that("wmf() honors WGCNA_control(min_features) as blockwiseModules' minModu
 
   fit_min <- function(k)
     wmf(X, y, WGCNA_params = WGCNA_control(power = 6, min_features = k),
-        screen_params = fast_screen(), select_params = fast_select(),
+        screen_params = fast_screen(),
+        # wmf() passes WGCNA's own labels through, so the unassigned cluster is "grey"
+        select_params = select_control(n_reps = 10L, min_ntree = 60L, pi_thr = 0.30,
+                                       shadow_mode = "split",
+                                       unassigned_modules = "grey"),
         final_ntree = 60L, num_processors = 1L, verbose = 0L, seed = 3L,
         backend = "R", r_shap = "permutation")
 

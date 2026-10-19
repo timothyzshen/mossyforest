@@ -33,7 +33,7 @@ Default \code{1}.}
 \item{mtry_rule}{How \code{mtry} is derived from the feature count.
 One of \code{"auto"} (default), \code{"sqrt"},
 \code{"p_over_3"}. See \code{\link{screen_control}}.
-Unlike screening, a single stability-selection run
+Unlike screening, a single stability selection run
 can fit BOTH classification and regression forests
 even though \code{y} is one fixed type. For instance, when
 \code{use_cfres = TRUE}, any pool that gets
@@ -64,7 +64,7 @@ Default \code{0.60}.}
 
 \item{pi_thr_unassigned}{Stability threshold for the unassigned pool.
 \code{NULL} (default) uses an automatic elbow
-detection rule. We recommend keep this \code{NULL}.}
+detection rule. We recommend keeping this \code{NULL}.}
 
 \item{threshold_mode}{Selection cutoff rule. \code{"pi_thr"} (default) uses
 the fixed \code{pi_thr} for the correlated pool and
@@ -78,14 +78,16 @@ Default \code{95}.}
 
 \item{unassigned_modules}{Character vector of module names treated as
 the unassigned pool (e.g. \code{"M10_unassigned"}).
-\code{NULL} disables split-pool logic.}
+Names must match values in \code{module_membership};
+a name that matches no module gives a warning.
+\code{NULL} disables split pool logic.}
 
 \item{use_cfres}{Logical. If \code{TRUE}, a cross fitted random
 forest is used to residualize \code{y} before the
-unassigned-pool stability step, reducing confounding
+unassigned pool stability step, reducing confounding
 from correlated modules. Default \code{FALSE}.}
 
-\item{cfres_n_folds}{Number of cross-fitting folds for cfRes
+\item{cfres_n_folds}{Number of cross fitting folds for cfRes
 residualization. Default \code{5}.}
 
 \item{cfres_ntree}{Trees per fold forest in cfRes residualization.
@@ -114,6 +116,11 @@ An object of class \code{select_control}.
 \description{
 Creates a parameter object controlling the shadow stability selection step
 of \code{\link{mf}}.
+}
+\examples{
+select_control()
+# cross fitted residualization of the outcome, with a stricter threshold
+select_control(n_reps = 20, pi_thr = 0.7, use_cfres = TRUE)
 }
 \seealso{
 \code{\link{screen_control}}, \code{\link{mf}}

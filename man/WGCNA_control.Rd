@@ -7,7 +7,7 @@
 WGCNA_control(power = 6, min_features = 20, ...)
 }
 \arguments{
-\item{power}{Soft-thresholding power passed to
+\item{power}{Soft thresholding power passed to
 \code{\link[WGCNA]{blockwiseModules}}. Default \code{6}.}
 
 \item{min_features}{Minimum module size, passed to
@@ -22,6 +22,11 @@ this are left unassigned. Default \code{20}.}
 An object of class \code{WGCNA_control}.
 }
 \description{
-Creates a parameter object for the WGCNA co-expression network step used
+Creates a parameter object for the WGCNA co expression network step used
 by \code{\link{wmf}}.
+}
+\examples{
+WGCNA_control()
+# extra arguments are passed on to WGCNA::blockwiseModules()
+WGCNA_control(power = 8, min_features = 30, deepSplit = 2)
 }

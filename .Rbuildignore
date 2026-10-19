@@ -14,3 +14,10 @@
 ^dev$
 ^data-raw$
 ^docs$
+^vignettes/articles$
+^cran-comments\.md$
+^_pkgdown\.yml$
+^pkgdown$
+^vignettes/mossyforest\.Rmd\.orig$
+^vignettes/precompute\.R$
+^vignettes/\.quarto$

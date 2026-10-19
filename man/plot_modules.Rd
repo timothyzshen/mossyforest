@@ -23,9 +23,9 @@ plot_modules(object, ...)
 
 \item{main}{Plot title. Default \code{"Module Membership Distribution"}.}
 
-\item{xlab}{X-axis label. Default \code{"Module"}.}
+\item{xlab}{X axis label. Default \code{"Module"}.}
 
-\item{ylab}{Y-axis label. Default \code{"Proportion of features"}.}
+\item{ylab}{Y axis label. Default \code{"Proportion of features"}.}
 
 \item{module_labels}{Optional two column data frame mapping old module labels
 to new display labels. Default \code{NULL}.}
@@ -42,3 +42,21 @@ colored by selection status.
 \item \code{plot_modules(mossy_forest)}: Module membership plot for a \code{mossy_forest} object.
 
 }}
+\examples{
+# A small simulated regression problem with two modules of features
+set.seed(1)
+n <- 60
+z <- rnorm(n)
+X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+                a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+                b3 = rnorm(n))
+y <- z + rnorm(n, sd = 0.3)
+membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+
+# The pure R backend needs no Python installation
+fit <- mf(X, y, module_membership = membership,
+          screen_params = screen_control(min_ntree = 50),
+          select_params = select_control(n_reps = 10, min_ntree = 50),
+          final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+plot_modules(fit)
+}

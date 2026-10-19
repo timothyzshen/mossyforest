@@ -32,7 +32,7 @@ plot_signed_importance(object, ...)
 
 \item{labels}{Optional named character vector mapping feature names (as in
 \code{final_SHAP$feature_name}) to readable labels for the axis, e.g.
-a gene-symbol or indicator-name lookup. Names not found are left unchanged.
+a gene symbol or indicator name lookup. Names not found are left unchanged.
 Default \code{NULL} (show the raw feature names).}
 
 \item{pos_color}{Bar color for positive direction. Default \code{"#4393c3"}.}
@@ -60,8 +60,9 @@ Bar chart of signed importance = direction \eqn{\times} mean|SHAP|.
 Magnitude is mean|SHAP| and the sign is the global effect direction taken from
 the Spearman correlation between each feature's value and its SHAP value
 (\code{mean(signed SHAP)} \eqn{\approx 0} because contributions cancel, so it
-is unusable for direction). Bars to the right increase the average predicted outcome, to the
-left decreases it. Features whose direction is ambiguous (non-monotone:
+is unusable for direction). Bars to the right increase the average predicted outcome, and bars to the
+left decrease it. These are associations in the fitted model, not causal
+effects of changing a feature. Features whose direction is ambiguous (non monotone:
 \eqn{|\rho| < 0.1}) are greyed.
 For binary classification, "the outcome" means the probability of
 \code{levels(y)[1]}, the first level of the factor passed as \code{y} to
@@ -70,7 +71,27 @@ class.
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{plot_signed_importance(mossy_forest)}: Signed-importance plot for a
+\item \code{plot_signed_importance(mossy_forest)}: Signed importance plot for a
 \code{mossy_forest} object.
 
 }}
+\examples{
+\dontshow{if (requireNamespace("treeshap", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# A small simulated regression problem with two modules of features
+set.seed(1)
+n <- 60
+z <- rnorm(n)
+X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+                a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+                b3 = rnorm(n))
+y <- z + rnorm(n, sd = 0.3)
+membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+
+# The pure R backend needs no Python installation
+fit <- mf(X, y, module_membership = membership,
+          screen_params = screen_control(min_ntree = 50),
+          select_params = select_control(n_reps = 10, min_ntree = 50),
+          final_ntree = 50, backend = "R", r_shap = "treeshap", verbose = 0, seed = 1)
+plot_signed_importance(fit)
+\dontshow{\}) # examplesIf}
+}

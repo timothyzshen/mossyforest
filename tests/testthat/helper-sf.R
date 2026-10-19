@@ -5,7 +5,7 @@
 #   module B  : B1..B4  correlated with latent z2
 #   independent: indSIG (real signal, no module partners) + noise1..noise4
 # Regression target depends on z1 - z2 + indSIG, so every "true" feature below
-# carries real signal and every noise* column is pure noise.
+# carries real signal and every noise column is pure noise.
 make_sf_data <- function(n = 160, sd_within = 0.30, sd_noise = 0.35, seed = 11) {
   set.seed(seed)
   z1  <- rnorm(n)
@@ -49,6 +49,7 @@ fit_R <- function(d, r_shap = "permutation", ...) {
 
 # Skip a test unless the Python backend (reticulate + sklearn + shap) is usable.
 skip_if_no_py_backend <- function() {
+  testthat::skip_on_cran()
   testthat::skip_if_not_installed("reticulate")
   ok <- tryCatch({
     reticulate::import("sklearn", delay_load = FALSE)

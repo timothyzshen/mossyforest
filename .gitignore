@@ -27,3 +27,5 @@ inst/doc
 renv/library/
 renv/python/
 
+docs
+.quarto/

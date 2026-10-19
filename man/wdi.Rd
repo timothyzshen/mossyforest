@@ -9,13 +9,13 @@ A list with three elements:
 \describe{
 \item{X}{A numeric matrix with 181 rows (countries) and 501 columns of
 World Bank development indicators for 2020, filtered to those present
-for at least 80\\% of countries and with residual gaps median imputed.
+for at least 80\% of countries and with residual gaps median imputed.
 Row names are country short names.}
 \item{y}{A numeric vector of length 181 of life expectancy at birth
-(total, in years).  All life-table-derived series (life expectancy,
+(total, in years).  All life table derived series (life expectancy,
 mortality, survival, and death counts) were removed from \code{X}.}
 \item{labels}{A named character vector mapping each indicator code in
-\code{colnames(X)} to its human-readable World Bank indicator name.}
+\code{colnames(X)} to its human readable World Bank indicator name.}
 }
 }
 \source{
@@ -30,6 +30,17 @@ data(wdi)
 A list containing World Bank development indicators and life expectancy for
 181 countries in 2020.
 }
+\section{License}{
+
+World Bank datasets are published under the Creative Commons Attribution 4.0
+International license (CC BY 4.0,
+\url{https://datacatalog.worldbank.org/public-licenses}). Credit: World Bank,
+World Development Indicators. Changes made: the data were subset, filtered
+and median imputed as described above. Some indicators are compiled by the
+World Bank from other agencies, so check the original source before
+redistributing them separately.
+}
+
 \references{
 World Bank. \emph{World Development Indicators}. Washington, DC:
 The World Bank Group.

@@ -21,13 +21,13 @@ plot_stability(object, ...)
 
 \item{fill}{Bar color. Default \code{"#3e568a"}.}
 
-\item{main}{Plot title. Default \code{"Shadow-Stability Frequencies"}.}
+\item{main}{Plot title. Default \code{"Shadow Stability Frequencies"}.}
 }
 \value{
 A \code{ggplot2} object (invisibly).
 }
 \description{
-Displays the subsample shadow-stability selection frequency for each stable
+Displays the subsample shadow stability selection frequency for each stable
 feature as a horizontal bar chart. Features are sorted by frequency.
 }
 \section{Methods (by class)}{
@@ -35,3 +35,21 @@ feature as a horizontal bar chart. Features are sorted by frequency.
 \item \code{plot_stability(mossy_forest)}: Stability frequency plot for a \code{mossy_forest} object.
 
 }}
+\examples{
+# A small simulated regression problem with two modules of features
+set.seed(1)
+n <- 60
+z <- rnorm(n)
+X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+                a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+                b3 = rnorm(n))
+y <- z + rnorm(n, sd = 0.3)
+membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+
+# The pure R backend needs no Python installation
+fit <- mf(X, y, module_membership = membership,
+          screen_params = screen_control(min_ntree = 50),
+          select_params = select_control(n_reps = 10, min_ntree = 50),
+          final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+plot_stability(fit)
+}

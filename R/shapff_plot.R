@@ -25,6 +25,23 @@
 #'
 #' @import ggplot2
 #' @import shapviz
+#' @examplesIf requireNamespace("treeshap", quietly = TRUE)
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", r_shap = "treeshap", verbose = 0, seed = 1)
+#' plot_importance(fit)
 #' @export
 plot_importance <- function(object, ...) {
   UseMethod("plot_importance")
@@ -109,6 +126,23 @@ plot_importance.mossy_forest <- function(object,
 #'
 #' @import ggplot2
 #' @import shapviz
+#' @examplesIf requireNamespace("treeshap", quietly = TRUE)
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", r_shap = "treeshap", verbose = 0, seed = 1)
+#' plot_waterfall(fit, row_id = 1)
 #' @export
 plot_waterfall <- function(object, ...) {
   UseMethod("plot_waterfall")
@@ -169,7 +203,7 @@ plot_waterfall.mossy_forest <- function(object,
   }
 
   p <- p +
-    ggtitle(paste0("Waterfall Plot — ", label)) +
+    ggtitle(paste0("Waterfall Plot - ", label)) +
     theme(plot.title = element_text(size = 14, hjust = 0.5))
 
   print(p)
@@ -198,6 +232,23 @@ plot_waterfall.mossy_forest <- function(object,
 #'
 #' @import ggplot2
 #' @import shapviz
+#' @examplesIf requireNamespace("treeshap", quietly = TRUE)
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", r_shap = "treeshap", verbose = 0, seed = 1)
+#' plot_force(fit, row_id = 1)
 #' @export
 plot_force <- function(object, ...) {
   UseMethod("plot_force")
@@ -256,7 +307,7 @@ plot_force.mossy_forest <- function(object,
   }
 
   p <- p +
-    ggtitle(paste0("Force Plot — ", label)) +
+    ggtitle(paste0("Force Plot - ", label)) +
     theme(plot.title = element_text(size = 14, hjust = 0.5))
 
   print(p)
@@ -266,17 +317,34 @@ plot_force.mossy_forest <- function(object,
 
 #' Plot Shadow Stability Frequencies for a Mossy Forest Object
 #'
-#' Displays the subsample shadow-stability selection frequency for each stable
+#' Displays the subsample shadow stability selection frequency for each stable
 #' feature as a horizontal bar chart. Features are sorted by frequency.
 #'
 #' @param object  A \code{mossy_forest} object.
 #' @param fill    Bar color. Default \code{"#3e568a"}.
-#' @param main    Plot title. Default \code{"Shadow-Stability Frequencies"}.
+#' @param main    Plot title. Default \code{"Shadow Stability Frequencies"}.
 #' @param ...     Ignored.
 #'
 #' @return A \code{ggplot2} object (invisibly).
 #'
 #' @import ggplot2
+#' @examples
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+#' plot_stability(fit)
 #' @export
 plot_stability <- function(object, ...) {
   UseMethod("plot_stability")
@@ -335,18 +403,35 @@ plot_stability.mossy_forest <- function(object,
 #'                       Default \code{"grey65"}.
 #' @param col_threshold  Color of the horizontal threshold line.
 #'                       Default \code{"tomato"}.
-#' @param col_elbow      Color of the vertical elbow-rank line.
+#' @param col_elbow      Color of the vertical elbow rank line.
 #'                       Default \code{"#e07b00"}.
 #' @param show_labels    Show feature names on points. Default \code{FALSE}.
 #'                       Set \code{TRUE} only for small pools (\eqn{p \le 20}).
 #' @param ncol           Number of columns in the facet grid. \code{NULL}
 #'                       lets ggplot choose. Default \code{NULL}.
-#' @param main           Plot title. Default \code{"Shadow-stability selection"}.
+#' @param main           Plot title. Default \code{"Shadow stability selection"}.
 #' @param ...            Ignored.
 #'
 #' @return A \code{ggplot2} object (invisibly).
 #'
 #' @import ggplot2
+#' @examples
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+#' plot_stability_elbow(fit)
 #' @export
 plot_stability_elbow <- function(object, ...) {
   UseMethod("plot_stability_elbow")
@@ -362,7 +447,7 @@ plot_stability_elbow.mossy_forest <- function(object,
                                                  col_elbow      = "#e07b00",
                                                  show_labels    = FALSE,
                                                  ncol           = NULL,
-                                                 main           = "Shadow-stability selection",
+                                                 main           = "Shadow stability selection",
                                                  ...) {
 
   sd <- object$stability_data
@@ -451,7 +536,7 @@ plot_stability_elbow.mossy_forest <- function(object,
 
 #' Plot Potential Interaction Matrix for a Mossy Forest Object
 #'
-#' Generates a heatmap of pairwise SHAP-based potential interaction strengths
+#' Generates a heatmap of pairwise SHAP based potential interaction strengths
 #' for all stable features.
 #'
 #' @param object A \code{mossy_forest} object.
@@ -460,6 +545,23 @@ plot_stability_elbow.mossy_forest <- function(object,
 #' @return A \code{ggplot2} object (invisibly).
 #'
 #' @import ggplot2
+#' @examplesIf requireNamespace("treeshap", quietly = TRUE)
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", r_shap = "treeshap", verbose = 0, seed = 1)
+#' plot_potential_interactions(fit)
 #' @export
 plot_potential_interactions <- function(object, ...) {
   UseMethod("plot_potential_interactions")
@@ -480,7 +582,7 @@ plot_potential_interactions.mossy_forest <- function(object, ...) {
   feats <- rownames(int_mat)
   p_n   <- length(feats)
 
-  # upper triangle long format (off-diagonal pairs only)
+  # upper triangle long format (off diagonal pairs only)
   rows <- vector("list", p_n * (p_n - 1L) / 2L)
   k    <- 1L
   for (j in seq_len(p_n - 1L)) {
@@ -538,7 +640,7 @@ plot_potential_interactions.mossy_forest <- function(object, ...) {
     ) +
     labs(x = NULL, y = NULL,
          title = "TreeSHAP Interaction Values",
-         subtitle = "Off-diagonal: pairwise interactions  |  Diagonal: main effects")
+         subtitle = "Off diagonal: pairwise interactions  |  Diagonal: main effects")
 
   print(p)
   invisible(p)
@@ -566,6 +668,23 @@ plot_potential_interactions.mossy_forest <- function(object, ...) {
 #'
 #' @import ggplot2
 #' @import dplyr
+#' @examplesIf requireNamespace("treeshap", quietly = TRUE)
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", r_shap = "treeshap", verbose = 0, seed = 1)
+#' plot_decisions(fit)
 #' @export
 plot_decisions <- function(object, ...) {
   UseMethod("plot_decisions")
@@ -687,8 +806,8 @@ plot_decisions.mossy_forest <- function(object,
 #'
 #' @param object        A \code{mossy_forest} object.
 #' @param main          Plot title. Default \code{"Module Membership Distribution"}.
-#' @param xlab          X-axis label. Default \code{"Module"}.
-#' @param ylab          Y-axis label. Default \code{"Proportion of features"}.
+#' @param xlab          X axis label. Default \code{"Module"}.
+#' @param ylab          Y axis label. Default \code{"Proportion of features"}.
 #' @param module_labels Optional two column data frame mapping old module labels
 #'                      to new display labels. Default \code{NULL}.
 #' @param ...           Ignored.
@@ -696,6 +815,23 @@ plot_decisions.mossy_forest <- function(object,
 #' @return A \code{ggplot2} object (invisibly).
 #'
 #' @import ggplot2
+#' @examples
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+#' plot_modules(fit)
 #' @export
 plot_modules <- function(object, ...) {
   UseMethod("plot_modules")
@@ -784,22 +920,44 @@ plot_modules.mossy_forest <- function(object,
 
 #' Plot Elbow Plot of Absolute SHAP Values for a Mossy Forest Object
 #'
-#' Ranks stable features by mean |SHAP| importance and displays an elbow
-#' (scree) plot, optionally colored by module membership.
+#' Ranks stable features by their importance score and displays an elbow
+#' (scree) plot, optionally colored by module membership. The score is mean
+#' |SHAP| for the Python backend and for the pure R backend with
+#' \code{r_shap = "treeshap"}, and ranger permutation importance for
+#' \code{r_shap = "permutation"}.
 #'
 #' @param object        A \code{mossy_forest} object.
-#' @param main          Plot title. Default \code{"Elbow Plot of Absolute SHAP Values"}.
-#' @param xlab          X-axis label. Default \code{"Features"}.
-#' @param ylab          Y-axis label. Default \code{"Absolute SHAP Values"}.
+#' @param main          Plot title. Default \code{"Elbow Plot of Absolute SHAP Values"}
+#'                      (\code{"Elbow Plot of Variable Importance"} when the fit has no SHAP scores).
+#' @param xlab          X axis label. Default \code{"Features"}.
+#' @param ylab          Y axis label. Default \code{"Absolute SHAP Values"}
+#'                      (\code{"Variable Importance"} when the fit has no SHAP scores).
 #' @param colorName     Legend title for module color. Default \code{"Module"}.
 #' @param color         Color points by module membership? Default \code{TRUE}.
-#' @param module_labels Optional two-column data frame of label mappings. Default \code{NULL}.
+#' @param module_labels Optional two column data frame of label mappings. Default \code{NULL}.
 #' @param ...           Ignored.
 #'
 #' @return A \code{ggplot2} object (invisibly).
 #'
 #' @import ggplot2
 #' @import dplyr
+#' @examples
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+#' plot_elbow(fit)
 #' @export
 plot_elbow <- function(object, ...) {
   UseMethod("plot_elbow")
@@ -816,9 +974,12 @@ plot_elbow.mossy_forest <- function(object,
                                       module_labels = NULL,
                                       ...) {
 
-  if (is.null(main))      main      <- "Elbow Plot of Absolute SHAP Values"
+  shap_based <- "mean_abs_shap" %in% names(object$final_SHAP)
+  if (is.null(main))      main      <- if (shap_based) "Elbow Plot of Absolute SHAP Values"
+                                       else "Elbow Plot of Variable Importance"
   if (is.null(xlab))      xlab      <- "Features"
-  if (is.null(ylab))      ylab      <- "Absolute SHAP Values"
+  if (is.null(ylab))      ylab      <- if (shap_based) "Absolute SHAP Values"
+                                       else "Variable Importance"
   if (is.null(colorName)) colorName <- "Module"
 
   if (!is.null(module_labels)) {
@@ -885,8 +1046,9 @@ plot_elbow.mossy_forest <- function(object,
 #' Magnitude is mean|SHAP| and the sign is the global effect direction taken from
 #' the Spearman correlation between each feature's value and its SHAP value
 #' (\code{mean(signed SHAP)} \eqn{\approx 0} because contributions cancel, so it
-#' is unusable for direction). Bars to the right increase the average predicted outcome, to the
-#' left decreases it. Features whose direction is ambiguous (non-monotone:
+#' is unusable for direction). Bars to the right increase the average predicted outcome, and bars to the
+#' left decrease it. These are associations in the fitted model, not causal
+#' effects of changing a feature. Features whose direction is ambiguous (non monotone:
 #' \eqn{|\rho| < 0.1}) are greyed.
 #' For binary classification, "the outcome" means the probability of
 #' \code{levels(y)[1]}, the first level of the factor passed as \code{y} to
@@ -899,7 +1061,7 @@ plot_elbow.mossy_forest <- function(object,
 #'   \code{Inf} to plot every stable feature.
 #' @param labels    Optional named character vector mapping feature names (as in
 #'   \code{final_SHAP$feature_name}) to readable labels for the axis, e.g.
-#'   a gene-symbol or indicator-name lookup. Names not found are left unchanged.
+#'   a gene symbol or indicator name lookup. Names not found are left unchanged.
 #'   Default \code{NULL} (show the raw feature names).
 #' @param pos_color Bar color for positive direction. Default \code{"#4393c3"}.
 #' @param neg_color Bar color for negative direction. Default \code{"#d6604d"}.
@@ -915,12 +1077,29 @@ plot_elbow.mossy_forest <- function(object,
 #'
 #' @return A \code{ggplot2} object (invisibly).
 #' @import ggplot2
+#' @examplesIf requireNamespace("treeshap", quietly = TRUE)
+#' # A small simulated regression problem with two modules of features
+#' set.seed(1)
+#' n <- 60
+#' z <- rnorm(n)
+#' X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+#'                 a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+#'                 b3 = rnorm(n))
+#' y <- z + rnorm(n, sd = 0.3)
+#' membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+#'
+#' # The pure R backend needs no Python installation
+#' fit <- mf(X, y, module_membership = membership,
+#'           screen_params = screen_control(min_ntree = 50),
+#'           select_params = select_control(n_reps = 10, min_ntree = 50),
+#'           final_ntree = 50, backend = "R", r_shap = "treeshap", verbose = 0, seed = 1)
+#' plot_signed_importance(fit)
 #' @export
 plot_signed_importance <- function(object, ...) {
   UseMethod("plot_signed_importance")
 }
 
-#' @describeIn plot_signed_importance Signed-importance plot for a
+#' @describeIn plot_signed_importance Signed importance plot for a
 #'   \code{mossy_forest} object.
 #' @export
 plot_signed_importance.mossy_forest <- function(object,
@@ -937,8 +1116,8 @@ plot_signed_importance.mossy_forest <- function(object,
   df <- object$final_SHAP
   if (is.null(df) || !("signed_importance" %in% names(df)) || nrow(df) == 0L)
     stop("No directional SHAP data found. Refit with backend = \"python\", ",
-         "or backend = \"R\" with r_shap = \"treeshap\" or \"fastshap\" ",
-         "(r_shap = \"permutation\" has no per-observation SHAP values).")
+         "or backend = \"R\" with r_shap = \"treeshap\" ",
+         "(r_shap = \"permutation\" has no per observation SHAP values).")
 
   # Keep the top_n features by abs(signed importance) 
   if (!is.null(top_n) && is.finite(top_n) && nrow(df) > top_n)
@@ -964,10 +1143,10 @@ plot_signed_importance.mossy_forest <- function(object,
     scale_fill_manual(
       values = c(positive = pos_color, negative = neg_color, ambiguous = amb_color),
       breaks = c("positive", "negative", "ambiguous"),
-      labels = c(paste0(pos_label, " (+)"), paste0(neg_label, " (−)"), amb_label),
+      labels = c(paste0(pos_label, " (+)"), paste0(neg_label, " (-)"), amb_label),
       name   = NULL
     ) +
-    labs(x = "Signed importance  (direction × mean |SHAP|)",
+    labs(x = "Signed importance  (direction x mean |SHAP|)",
          y = NULL, title = main) +
     theme_minimal(base_size = 13) +
     theme(plot.title = element_text(size = 14, hjust = 0.5),

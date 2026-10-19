@@ -15,7 +15,7 @@ plot_stability_elbow(object, ...)
   col_elbow = "#e07b00",
   show_labels = FALSE,
   ncol = NULL,
-  main = "Shadow-stability selection",
+  main = "Shadow stability selection",
   ...
 )
 }
@@ -33,7 +33,7 @@ Default \code{"grey65"}.}
 \item{col_threshold}{Color of the horizontal threshold line.
 Default \code{"tomato"}.}
 
-\item{col_elbow}{Color of the vertical elbow-rank line.
+\item{col_elbow}{Color of the vertical elbow rank line.
 Default \code{"#e07b00"}.}
 
 \item{show_labels}{Show feature names on points. Default \code{FALSE}.
@@ -42,7 +42,7 @@ Set \code{TRUE} only for small pools (\eqn{p \le 20}).}
 \item{ncol}{Number of columns in the facet grid. \code{NULL}
 lets ggplot choose. Default \code{NULL}.}
 
-\item{main}{Plot title. Default \code{"Shadow-stability selection"}.}
+\item{main}{Plot title. Default \code{"Shadow stability selection"}.}
 }
 \value{
 A \code{ggplot2} object (invisibly).
@@ -67,3 +67,21 @@ line.
 \code{mossy_forest} object.
 
 }}
+\examples{
+# A small simulated regression problem with two modules of features
+set.seed(1)
+n <- 60
+z <- rnorm(n)
+X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+                a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+                b3 = rnorm(n))
+y <- z + rnorm(n, sd = 0.3)
+membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+
+# The pure R backend needs no Python installation
+fit <- mf(X, y, module_membership = membership,
+          screen_params = screen_control(min_ntree = 50),
+          select_params = select_control(n_reps = 10, min_ntree = 50),
+          final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+plot_stability_elbow(fit)
+}

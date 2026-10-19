@@ -22,12 +22,12 @@ screening. Default \code{0.50}.}
 
 \item{mtry_factor}{Multiplier applied to the \code{mtry_rule}'s base value
 to derive \code{mtry} for each screening random forest
-(\code{mtry = ceiling(mtry_factor * base)}, contrained to
+(\code{mtry = ceiling(mtry_factor * base)}, constrained to
 \code{[1, p]}). Default \code{1}.}
 
 \item{mtry_rule}{How \code{mtry} is derived from the feature count
-\code{p}. \code{"auto"} (default) uses \code{p/3} for
-classification and \code{sqrt(p)} for regression.
+\code{p}. \code{"auto"} (default) uses \code{sqrt(p)} for
+classification and \code{p/3} for regression.
 \code{"sqrt"} uses \code{sqrt(p)} for classification
 AND regression. \code{"p_over_3"} uses \code{p/3} for
 classification AND regression.}
@@ -44,6 +44,10 @@ An object of class \code{screen_control}.
 \description{
 Creates a parameter object controlling the screening (recursive feature
 elimination) step of \code{\link{mf}}.
+}
+\examples{
+screen_control()
+screen_control(drop_fraction = 0.1, keep_fraction = 0.3, min_ntree = 200)
 }
 \seealso{
 \code{\link{select_control}}, \code{\link{mf}}

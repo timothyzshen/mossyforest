@@ -26,14 +26,14 @@ knitr::opts_chunk$set(fig.width = 9, fig.height = 5)
 
 This vignette demonstrates the full Mossy Forest (MF) workflow on the **World Development Indicators (WDI)** dataset from the World Bank. We want to predict a country's **life expectancy at birth** from its development profile.
 
-Many indicators are strongly correlated (a country rich on one economic axis tends to be rich on many), so a model can "explain" the outcome with almost any one of the redundant block as a stand-in for the others. 
+Many indicators are strongly correlated (a country rich on one economic axis tends to be rich on many), so a model can "explain" the outcome with almost any one of the redundant block as a stand in for the others. 
 
 The vignette is separated in four stages:
 
 1. Data loading and summary
 2. WGCNA
 3. Single MF run and output for exploration purposes
-4. Nested cross-validation comparing all six MF variants 
+4. Nested cross validation comparing all six MF variants 
 
 ---
 
@@ -45,10 +45,10 @@ We first load the data (included in the package).
 #| warning: false
 #| message: false
 
-if (!require("devtools", quietly = TRUE))
-    install.packages("devtools")
-library(devtools)
-devtools::install_github("timothyzshen/mossyforest")
+# if (!require("devtools", quietly = TRUE))
+#     install.packages("devtools")
+# library(devtools)
+# devtools::install_github("timothyzshen/mossyforest")
 
 library(mossyforest)
 library(WGCNA)
@@ -71,14 +71,14 @@ cat("Outcome   : life expectancy at birth,",
 mf_cache <- if (file.exists("wdi_results.rds")) readRDS("wdi_results.rds") else NULL
 ```
 
-We have a $181 \times 501$ matrix where the outcome is a continuous quantity (years of life expectancy). This is a regression problem, so throughout we score models by **out-of-sample $R^2$** (and RMSE in years) rather than the AUC used in the classification vignettes.
+We have a $181 \times 501$ matrix where the outcome is a continuous quantity (years of life expectancy). This is a regression problem, so throughout we score models by **out of sample $R^2$** (and RMSE in years) rather than the AUC used in the classification vignettes.
 
 ## Feature correlation structure
 
-Before fitting anything it is worth seeing why this is a hard selection problem. Most of these indicators move together. We summarise this by the distribution of absolute pairwise **Spearman** (rank) correlations among all indicators. We use Spearman rather than Pearson because development indicators are heavily skewed (GDP, population, and land area span orders of magnitude) and often related monotonically but non-linearly. 
+Before fitting anything it is worth seeing why this is a hard selection problem. Most of these indicators move together. We summarise this by the distribution of absolute pairwise **Spearman** (rank) correlations among all indicators. We use Spearman rather than Pearson because development indicators are heavily skewed (GDP, population, and land area span orders of magnitude) and often related monotonically but non linearly. 
 
 ```{r cor-hist}
-#| fig-cap: "Distribution of absolute pairwise Spearman correlations among the 501 indicators. The right tail marks blocks of mutually-redundant features — exactly the structure MF is designed to navigate."
+#| fig-cap: "Distribution of absolute pairwise Spearman correlations among the 501 indicators. The right tail marks blocks of mutually redundant features — exactly the structure MF is designed to navigate."
 library(ggplot2)
 
 cor_mat <- cor(wdi_X, method = "spearman")
@@ -105,7 +105,7 @@ options(stringsAsFactors = FALSE)
 enableWGCNAThreads()
 ```
 
-## Rank-transform for the network
+## Rank transform for the network
 
 WGCNA builds its network from pairwise correlations, so it inherits Pearson's weakness on skewed data. On the raw indicators this leads to a network in which ~80% of indicators unassigned, not because they lack structure but because their monotonic associations do not show up as high linear correlations. We therefore rank transform every indicator before building the network which recovers a better network structure. This transform is used **only** to define modules, MF itself is fit on the raw
 indicators (random forests are invariant to monotonic transforms, so this
@@ -116,9 +116,9 @@ wdi_Xnet <- as.data.frame(lapply(wdi_X, rank))
 rownames(wdi_Xnet) <- rownames(wdi_X)
 ```
 
-## Soft-threshold power selection
+## Soft threshold power selection
 
-WGCNA constructs a weighted co-expression-style network by raising pairwise correlations to a soft-thresholding power $\beta$. The chosen power should make the resulting network approximately **scale-free** ($R^2 \geq 0.8$) while keeping **mean connectivity** reasonably high. We use a **signed** network so that positively- and negatively-associated indicators land in different modules.
+WGCNA constructs a weighted co expression style network by raising pairwise correlations to a soft thresholding power $\beta$. The chosen power should make the resulting network approximately **scale free** ($R^2 \geq 0.8$) while keeping **mean connectivity** reasonably high. We use a **signed** network so that positively- and negatively associated indicators land in different modules.
 
 ```{r soft-threshold, eval=FALSE}
 powers <- c(1:10, seq(12, 20, by = 2))
@@ -134,15 +134,15 @@ sft <- pickSoftThreshold(
 ```{r soft-threshold-plot, eval=FALSE}
 #| fig-width: 10
 #| fig-height: 4
-#| fig-cap: "Left: scale-free topology fit (R²) vs soft power. Right: mean network connectivity vs soft power. Choose the lowest power where R² ≥ 0.8 (dashed line)."
+#| fig-cap: "Left: scale free topology fit (R²) vs soft power. Right: mean network connectivity vs soft power. Choose the lowest power where R² ≥ 0.8 (dashed line)."
 
 par(mfrow = c(1, 2), mar = c(5, 5, 3, 1))
 
 plot(sft$fitIndices[, 1],
      -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2],
-     xlab = "Soft-threshold power (β)",
-     ylab = expression(paste("Scale-free topology fit R"^2)),
-     main = "Scale-free fit",
+     xlab = "Soft threshold power (β)",
+     ylab = expression(paste("Scale free topology fit R"^2)),
+     main = "Scale free fit",
      type = "n", ylim = c(0, 1))
 abline(h = 0.8, lty = 2, col = "tomato", lwd = 1.5)
 text(sft$fitIndices[, 1],
@@ -151,7 +151,7 @@ text(sft$fitIndices[, 1],
 
 plot(sft$fitIndices[, 1],
      sft$fitIndices[, 5],
-     xlab = "Soft-threshold power (β)",
+     xlab = "Soft threshold power (β)",
      ylab = "Mean connectivity",
      main = "Mean connectivity",
      type = "n")
@@ -160,7 +160,7 @@ text(sft$fitIndices[, 1],
      labels = powers, col = "#D62728", cex = 0.9, font = 2)
 ```
 
-Signed networks need roughly double the power of unsigned ones to reach scale-free topology. We choose **β = 10**, the lowest power where $R^2$ reaches 0.8 while mean connectivity is still distinguishable from zero.
+Signed networks need roughly double the power of unsigned ones to reach scale free topology. We choose **β = 10**, the lowest power where $R^2$ reaches 0.8 while mean connectivity is still distinguishable from zero.
 
 ## Module detection and dendrogram
 
@@ -181,7 +181,7 @@ net <- blockwiseModules(
   verbose           = 0
 )
 
-table(net$colors)   # grey = unassigned (treated as independent by MF)
+table(net$colors)   # grey = unassigned (treated as the unassigned pool by MF)
 ```
 
 ```{r wgcna-dendro, eval=FALSE}
@@ -214,7 +214,7 @@ if (!is.null(mf_cache) && !is.null(mf_cache$p_dendro))
 
 ```{r module-summary, eval=FALSE}
 mod_tbl <- as.data.frame(table(Module = net$colors))
-mod_tbl$Independent <- mod_tbl$Module == "grey"
+mod_tbl$Unassigned <- mod_tbl$Module == "grey"
 mod_tbl <- mod_tbl[order(mod_tbl$Freq, decreasing = TRUE), ]
 knitr::kable(mod_tbl, row.names = FALSE,
              caption = "WGCNA module sizes (grey = unassigned pool).")
@@ -226,9 +226,9 @@ if (!is.null(mf_cache) && !is.null(mf_cache$mod_tbl))
                caption = "WGCNA module sizes (grey = unassigned pool).")
 ```
 
-Grey indicators are **unassigned by WGCNA** and treated as the unassigned pool. On the rank-transformed network this pool is modest with the remaining ~85% falling into a handful of coherent modules (a macro-economic block, a health/sanitation block, a demographic block, and so on). 
+Grey indicators are **unassigned by WGCNA** and treated as the unassigned pool. On the rank transformed network this pool is modest with the remaining ~85% falling into a handful of coherent modules (a macro economic block, a health/sanitation block, a demographic block, and so on). 
 
-### Eigengene-based connectivity (kME)
+### Eigengene based connectivity (kME)
 
 Module eigengenes summarise each module's profile as a single representative vector. Correlating every indicator with each module eigengene gives its **module membership** ($k_{ME}$).
 
@@ -269,7 +269,7 @@ if (!is.null(mf_cache) && !is.null(mf_cache$top_hubs_disp))
 ```
 
 ```{r hub-lollipop, eval=FALSE}
-#| fig-cap: "Top 20 intramodular hub indicators ranked by eigengene-based connectivity (kME), colored by WGCNA module."
+#| fig-cap: "Top 20 intramodular hub indicators ranked by eigengene based connectivity (kME), colored by WGCNA module."
 library(ggplot2)
 
 p_hub <- ggplot(top_hubs, aes(x = reorder(label, kME), y = kME, color = module)) +
@@ -280,20 +280,20 @@ p_hub <- ggplot(top_hubs, aes(x = reorder(label, kME), y = kME, color = module))
                         labels = unique(top_hubs$module)) +
   coord_flip() +
   labs(title    = "Top intramodular hub indicators",
-       subtitle = "Ranked by eigengene-based connectivity (kME)",
+       subtitle = "Ranked by eigengene based connectivity (kME)",
        x = NULL, y = expression(k[ME])) +
   theme_bw()
 p_hub
 ```
 
 ```{r show-hub-lollipop, echo=FALSE}
-#| fig-cap: "Top 20 intramodular hub indicators ranked by eigengene-based connectivity (kME), colored by WGCNA module."
+#| fig-cap: "Top 20 intramodular hub indicators ranked by eigengene based connectivity (kME), colored by WGCNA module."
 if (!is.null(mf_cache) && !is.null(mf_cache$p_hub)) print(mf_cache$p_hub)
 ```
 
-### Final module membership (kME-refined)
+### Final module membership (kME refined)
 
-Hierarchical clustering can leave borderline indicators misassigned at the dendrogram cut. As a final step, we reassign every indicator to the module whose eigengene it correlates with most strongly (its **maximum-kME module**). 
+Hierarchical clustering can leave borderline indicators misassigned at the dendrogram cut. As a final step, we reassign every indicator to the module whose eigengene it correlates with most strongly (its **maximum kME module**). 
 
 ```{r module-membership, eval=FALSE}
 module_names <- sub("^kME", "", colnames(kME))
@@ -309,20 +309,20 @@ module_membership[module_membership == "grey"] <- "unassigned"
 membership_xtab <- as.data.frame.matrix(
   table(clustering = net$colors, kME_refined = module_membership))
 knitr::kable(membership_xtab,
-             caption = "Dendrogram clustering vs kME-refined membership (row = clustering color).")
+             caption = "Dendrogram clustering vs kME refined membership (row = clustering color).")
 ```
 
 ```{r show-membership, echo=FALSE}
 if (!is.null(mf_cache) && !is.null(mf_cache$membership_xtab))
   knitr::kable(mf_cache$membership_xtab,
-               caption = "Dendrogram clustering vs kME-refined membership (row = clustering color).")
+               caption = "Dendrogram clustering vs kME refined membership (row = clustering color).")
 ```
 
 ---
 
 # Single MF Run
 
-We fit MF once on the full dataset using the module membership derived above and the **Python backend**, which provides exact TreeSHAP values and is much faster than the pure-R fallback. This requires a
+We fit MF once on the full dataset using the module membership derived above and the **Python backend**, which provides exact TreeSHAP values and is much faster than the pure R fallback. This requires a
 Python environment with `scikit-learn`, `shap`, and `numpy` (see `?mf_setup`).
 
 ```{r mf-setup, eval=FALSE}
@@ -334,6 +334,7 @@ fit <- mf(
   X = wdi_X,
   y = wdi_y,
   module_membership = module_membership,
+  select_params = select_control(unassigned_modules = "unassigned"),
   backend = "python",
   verbose = 1L,
   seed = 2026
@@ -351,23 +352,23 @@ head(sort(fit$stability_freq, decreasing = TRUE), 20)
 ## Stability plot
 
 ```{r plot-stability, eval=FALSE, fig.height=15}
-#| fig-cap: "Shadow-win frequency per feature. Filled points exceed the stability threshold and enter the stable set."
+#| fig-cap: "Shadow win frequency per feature. Filled points exceed the stability threshold and enter the stable set."
 plot_stability(fit)
 ```
 
 ```{r show-stability, eval=TRUE, fig.height=15}
-#| fig-cap: "Shadow-win frequency per feature. Filled points exceed the stability threshold and enter the stable set."
+#| fig-cap: "Shadow win frequency per feature. Filled points exceed the stability threshold and enter the stable set."
 if (!is.null(mf_cache)) print(mf_cache$p_stability)
 ```
 
 The dashed horizontal line is the tuned `pi_thr`. The right panel shows the
-unassigned pool with its own elbow-detected threshold.
+unassigned pool with its own elbow detected threshold.
 
 ## Feature importance
 
 ```{r plot-importance, eval=FALSE, fig.height=12}
 #| fig-cap: "Mean |SHAP| for the top 20 stable indicators."
-plot_importance(fit, top_n = 20)
+plot_importance(fit, max_display = min(20L, nrow(fit$final_SHAP)))
 ```
 
 ```{r show-importance, echo=FALSE, fig.height=12}
@@ -377,7 +378,7 @@ if (!is.null(mf_cache)) print(mf_cache$p_importance)
 
 ---
 
-# Model Comparison: Three-Way Split + Cross-Validated Tuning
+# Model Comparison: Three Way Split + Cross Validated Tuning
 
 ## Design
 
@@ -386,10 +387,10 @@ We compare **six MF variants** formed by two shadow modes × three cfRes options
 | Variant | Shadow mode | cfRes |
 |---------|-------------|-----|
 | `split` | split | none |
-| `split_dml` | split | standard |
+| `split_cfres` | split | standard |
 | `split_mcfres` | split | marginal |
 | `within` | within_module | none |
-| `within_dml` | within_module | standard |
+| `within_cfres` | within_module | standard |
 | `within_mcfres` | within_module | marginal |
 
 We proceed with the following:
@@ -400,9 +401,9 @@ We proceed with the following:
 1. **Vault a test set** (~20%, stratified) — held out once, scored once, at
    the very end.
    
-2. **On the remaining ~80% (train):** 5-fold CV tunes the hyperparameter grid *and* compares the six variants on both performance (mean validation-fold AUC) **and** stability (Nogueira $\hat\Phi$ of the stable set across folds).
+2. **On the remaining ~80% (train):** 5 fold CV tunes the hyperparameter grid *and* compares the six variants on both performance (mean validation fold $R^2$) **and** stability (Nogueira $\hat\Phi$ of the stable set across folds).
 
-3. **Select one variant** by a pre-specified rule (below), refit every variant
+3. **Select one variant** by a pre specified rule (below), refit every variant
    on the *full* train set, and report performance on the test set. 
 
 Hyperparameters tuned jointly on the validation folds:
@@ -416,7 +417,7 @@ Hyperparameters tuned jointly on the validation folds:
 
 All other parameters stay at package defaults.
 
-**Selection rule** For each variant, hyperparameters are tuned by the predictive AUC. Variant *selection* then uses the **Nogueira size-corrected stability index** $\hat\Phi$. Among variants whose $\hat\Phi$
+**Selection rule** For each variant, hyperparameters are tuned by the predictive AUC. Variant *selection* then uses the **Nogueira size corrected stability index** $\hat\Phi$. Among variants whose $\hat\Phi$
 falls within one SE of the maximum, we choose the most **parsimonious**. 
 
 ## Setup
@@ -431,10 +432,10 @@ library(caret)
 ```{r cv-setup, eval=FALSE}
 VARIANTS <- list(
   split       = list(shadow_mode = "split",         use_cfres = FALSE, cfres_scope = "unassigned"),
-  split_dml   = list(shadow_mode = "split",         use_cfres = TRUE,  cfres_scope = "unassigned"),
+  split_cfres   = list(shadow_mode = "split",         use_cfres = TRUE,  cfres_scope = "unassigned"),
   split_mcfres  = list(shadow_mode = "split",         use_cfres = TRUE,  cfres_scope = "all_modules"),
   within      = list(shadow_mode = "within_module", use_cfres = FALSE, cfres_scope = "unassigned"),
-  within_dml  = list(shadow_mode = "within_module", use_cfres = TRUE,  cfres_scope = "unassigned"),
+  within_cfres  = list(shadow_mode = "within_module", use_cfres = TRUE,  cfres_scope = "unassigned"),
   within_mcfres = list(shadow_mode = "within_module", use_cfres = TRUE,  cfres_scope = "all_modules")
 )
 
@@ -444,7 +445,7 @@ GRID <- expand.grid(
   stringsAsFactors = FALSE
 )
 
-# Vault ~20% as the held-out test set; the rest is train.
+# Vault ~20% as the held out test set; the rest is train.
 set.seed(2026)
 trainval_idx <- as.integer(caret::createDataPartition(
   wdi_y, p = 0.8, list = FALSE))
@@ -453,13 +454,13 @@ test_idx     <- setdiff(seq_along(wdi_y), trainval_idx)
 X_tv   <- wdi_X[trainval_idx, ]; y_tv   <- wdi_y[trainval_idx]
 X_test <- wdi_X[test_idx, ];     y_test <- wdi_y[test_idx]
 
-# Validation role = 5-fold CV within train
+# Validation role = 5 fold CV within train
 val_folds <- caret::createFolds(y_tv, k = 5, returnTrain = FALSE)
 
 cat(sprintf("Train: %d  |  Test vault: %d\n", length(y_tv), length(y_test)))
 ```
 
-## Fit-and-evaluate helper
+## Fit and evaluate helper
 
 ```{r cv-helper, eval=FALSE}
 fit_eval <- function(X_tr, y_tr, X_te, y_te, variant, grid_row) {
@@ -472,6 +473,7 @@ fit_eval <- function(X_tr, y_tr, X_te, y_te, variant, grid_row) {
     pi_thr           = grid_row$pi_thr,
     n_reps          = 25L,
     min_ntree        = 100L,
+    unassigned_modules = "unassigned",
     shadow_mode      = variant$shadow_mode,
     use_cfres = variant$use_cfres,
     cfres_scope        = variant$cfres_scope
@@ -511,9 +513,9 @@ fit_eval <- function(X_tr, y_tr, X_te, y_te, variant, grid_row) {
 }
 ```
 
-## Cross-validated tuning and stability
+## Cross validated tuning and stability
 
-For each variant we sweep all 3 grid rows across the five validation folds, record each row's mean validation $R^2$, and lock the best-scoring row. At that locked setting we keep the per-fold stable sets, whose Nogueira $\hat{\Phi}$ is the variant's **stability**. 
+For each variant we sweep all 3 grid rows across the five validation folds, record each row's mean validation $R^2$, and lock the best scoring row. At that locked setting we keep the per fold stable sets, whose Nogueira $\hat{\Phi}$ is the variant's **stability**. 
 
 ```{r cv-tune, eval=FALSE}
 jac_fn <- function(a, b)
@@ -568,7 +570,7 @@ names(tune) <- names(VARIANTS)
 
 ### Variant selection
 
-For each variant, hyperparameters were tuned by predictive $R^2$. Variant selection itself uses the **Nogueira size-corrected stability index** $\hat{\Phi}$ (Nogueira, Sechidis & Brown, 2018), which corrects the inflation that raw Jaccard exhibits when comparing variants with different stable set sizes. Among variants whose $\hat{\Phi}$ falls within one SE of the maximum, we select the most **parsimonious** (smallest $\bar{k}$).
+For each variant, hyperparameters were tuned by predictive $R^2$. Variant selection itself uses the **Nogueira size corrected stability index** $\hat{\Phi}$ (Nogueira, Sechidis & Brown, 2018), which corrects the inflation that raw Jaccard exhibits when comparing variants with different stable set sizes. Among variants whose $\hat{\Phi}$ falls within one SE of the maximum, we select the most **parsimonious** (smallest $\bar{k}$).
 
 ```{r cv-select, eval=FALSE}
 # helpers
@@ -619,26 +621,26 @@ summary_tbl <- do.call(rbind, lapply(tune, function(t) {
   )
 }))
 
-# 1-SE rule 
+# 1 SE rule 
 top     <- which.max(summary_tbl$Phi)
 cutoff  <- summary_tbl$Phi[top] - summary_tbl$Phi_SE[top]
 in_band <- summary_tbl[summary_tbl$Phi >= cutoff, ]
 best_v  <- in_band$Variant[which.min(in_band$k_bar)]
 
 knitr::kable(summary_tbl, align = "lccccccc",
-             caption = "Validation-fold performance and Nogueira stability (Φ̂) per variant.")
-cat("Selected variant (1-SE on Φ̂, parsimony tiebreak):", best_v, "\n")
+             caption = "Validation fold performance and Nogueira stability (Φ̂) per variant.")
+cat("Selected variant (1 SE on Φ̂, parsimony tiebreak):", best_v, "\n")
 ```
 
 ```{r show-summary, echo=FALSE}
 if (!is.null(mf_cache))
   knitr::kable(mf_cache$summary_tbl, align = "lccccccc",
-               caption = "Validation-fold performance and Nogueira stability (Φ̂) per variant.")
+               caption = "Validation fold performance and Nogueira stability (Φ̂) per variant.")
 ```
 
 ### Pairwise variant comparison
 
-The five validation folds give five paired $R^2$ values per variant. We test all 15 pairs with a paired Wilcoxon test and apply Benjamini-Hochberg correction.
+The five validation folds give five paired $R^2$ values per variant. For all 15 pairs we report the mean difference in validation fold $R^2$. With only five folds, a significance test would have little power, so we do not report p values.
 
 ```{r pairwise, eval=FALSE}
 pairs <- combn(names(VARIANTS), 2, simplify = FALSE)
@@ -646,25 +648,22 @@ pairs <- combn(names(VARIANTS), 2, simplify = FALSE)
 pw <- do.call(rbind, lapply(pairs, function(p) {
   a <- tune[[p[1]]]$cv_r2s
   b <- tune[[p[2]]]$cv_r2s
-  wt <- wilcox.test(a, b, paired = TRUE, exact = FALSE)
   data.frame(`Method A` = p[1], `Method B` = p[2],
              `ΔR2`      = round(mean(a - b, na.rm = TRUE), 3),
-             `p-value`  = round(wt$p.value, 4),
              check.names = FALSE)
 }))
-pw$`p-adj (BH)` <- round(p.adjust(pw$`p-value`, method = "BH"), 4)
-knitr::kable(pw, caption = "Pairwise Wilcoxon tests on validation-fold R².")
+knitr::kable(pw, caption = "Mean difference in validation fold R² between variants.")
 ```
 
 ```{r show-pairwise, echo=FALSE}
 if (!is.null(mf_cache))
-  knitr::kable(mf_cache$pw, caption = "Pairwise Wilcoxon tests on validation-fold R².")
+  knitr::kable(mf_cache$pw, caption = "Mean difference in validation fold R² between variants.")
 ```
 
 ### Nogueira stability
 
 ```{r phi-plot, eval=FALSE}
-#| fig-cap: "Nogueira size-corrected stability index (Φ̂) per variant with ±1 SE error bars. Unlike raw Jaccard, Φ̂ accounts for the expected overlap at each variant's selection size, enabling unbiased cross-variant comparison."
+#| fig-cap: "Nogueira size corrected stability index (Φ̂) per variant with ±1 SE error bars. Unlike raw Jaccard, Φ̂ accounts for the expected overlap at each variant's selection size, enabling unbiased cross variant comparison."
 library(ggplot2)
 
 phi_df <- data.frame(
@@ -679,20 +678,20 @@ ggplot(phi_df, aes(x = reorder(Variant, Phi), y = Phi)) +
                 width = 0.25, color = "grey30") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey40") +
   coord_flip() +
-  labs(title    = "Nogueira size-corrected stability per variant",
-       subtitle = "Error bars = ±1 SE  |  Dashed line = random-selection null (Φ̂ = 0)",
+  labs(title    = "Nogueira size corrected stability per variant",
+       subtitle = "Error bars = ±1 SE  |  Dashed line = random selection null (Φ̂ = 0)",
        x = NULL, y = expression(hat(Phi))) +
   theme_bw()
 ```
 
 ```{r show-jaccard, echo=FALSE}
-#| fig-cap: "Nogueira size-corrected stability index (Φ̂) per variant with ±1 SE error bars."
+#| fig-cap: "Nogueira size corrected stability index (Φ̂) per variant with ±1 SE error bars."
 if (!is.null(mf_cache)) print(mf_cache$p_jaccard)
 ```
 
-### Final models and held-out test evaluation
+### Final models and held out test evaluation
 
-We refit **every** variant on the full train + validation set at its locked hyperparameters, then score each on the test set. 
+We refit **every** variant on the full train set at its locked hyperparameters, then score each on the test set. 
 
 ```{r final-models, eval=FALSE}
 final_models <- lapply(names(VARIANTS), function(vname) {
@@ -707,6 +706,7 @@ final_models <- lapply(names(VARIANTS), function(vname) {
     pi_thr           = row$pi_thr,
     n_reps          = 25L,
     min_ntree        = 500L,
+    unassigned_modules = "unassigned",
     shadow_mode      = variant$shadow_mode,
     use_cfres = variant$use_cfres,
     cfres_scope        = variant$cfres_scope
@@ -747,19 +747,19 @@ test_tbl <- data.frame(
   row.names = NULL
 )
 knitr::kable(test_tbl, align = "lcccc",
-             caption = "Held-out test-vault performance (selection made on validation only).")
+             caption = "Held out test vault performance (selection made on validation only).")
 ```
 
 ```{r show-test, echo=FALSE}
 if (!is.null(mf_cache))
   knitr::kable(mf_cache$test_tbl, align = "lcccc",
-               caption = "Held-out test-vault performance (selection made on validation only).")
+               caption = "Held out test vault performance (selection made on validation only).")
 ```
 
 
 ### Predictive value of the stable set
 
-We compare a random forest trained on **all 501 indicators** against one trained on **only the MF stable set**, both scored on the same held-out test vault with identical RF parameter settings. 
+We compare a random forest trained on **all 501 indicators** against one trained on **only the MF stable set**, both scored on the same held out test vault with identical RF parameter settings. 
 
 ```{r perf-compare, eval=FALSE}
 stable_final <- final_models[[best_v]]$fit$feature_list$feature_name
@@ -784,18 +784,18 @@ perf_tbl <- data.frame(
   check.names   = FALSE, row.names = NULL
 )
 knitr::kable(perf_tbl, align = "lccc",
-             caption = "Held-out test performance: full feature set vs MF stable set.")
+             caption = "Held out test performance: full feature set vs MF stable set.")
 ```
 
 ```{r show-perf, echo=FALSE}
 if (!is.null(mf_cache) && !is.null(mf_cache$perf_tbl))
   knitr::kable(mf_cache$perf_tbl, align = "lccc",
-               caption = "Held-out test performance: full feature set vs MF stable set.")
+               caption = "Held out test performance: full feature set vs MF stable set.")
 ```
 
 ### Top stable indicators by SHAP
 
-The most influential indicators, ranked by **mean |SHAP|** (average absolute contribution to the life expectancy prediction across countries), with their WGCNA module, effect **direction**, and cross-fit selection stability. Direction is the sign of the Spearman correlation between each indicator's value and its SHAP value. **+** increases the predicted average, indicating higher life expectancy. **−** decreases it. Indicators whose SHAP–value relationship is non-monotone are flagged *ambiguous*.
+The most influential indicators, ranked by **mean |SHAP|** (average absolute contribution to the life expectancy prediction across countries), with their WGCNA module, effect **direction**, and cross fit selection stability. Direction is the sign of the Spearman correlation between each indicator's value and its SHAP value. **+** increases the predicted average, indicating higher life expectancy. **−** decreases it. Indicators whose SHAP–value relationship is non monotone are flagged *ambiguous*.
 
 ```{r shap-final, eval=FALSE}
 best_fit <- final_models[[best_v]]$fit
@@ -836,7 +836,7 @@ We show the directional feature importance.
 #| fig-height: 7
 #| fig-cap: "Top 20 indicators by |signed importance| for the deployed model. Bar length = mean |SHAP|; sign = value–SHAP Spearman direction. Right increases average predicted life expectancy, left decreases; grey = ambiguous."
 
-# `labels` annotates the axis with human-readable indicator names
+# `labels` annotates the axis with human readable indicator names
 p_signed <- plot_signed_importance(best_fit, top_n = 30, labels = wdi_labels)
 ```
 

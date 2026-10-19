@@ -21,7 +21,8 @@ Invisible \code{NULL}.
 }
 \description{
 Tells Mossy Forest which Python installation to use for its backend.
-Call this once at the start of each R session before using \code{\link{mf}}.
+Call this once at the start of each R session before using \code{\link{mf}}
+with \code{backend = "python"}. The pure R backend does not need it.
 }
 \details{
 The Python environment must have \code{scikit-learn}, \code{shap}, and

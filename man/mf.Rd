@@ -28,7 +28,10 @@ mf(
 classification).}
 
 \item{module_membership}{A named character vector assigning each feature in
-\code{X} to a module. Names must match \code{colnames(X)}.}
+\code{X} to a module. Names must match \code{colnames(X)}.
+Modules named in \code{select_control(unassigned_modules)}
+form the unassigned pool, which is selected with its own
+elbow based threshold; all other modules use \code{pi_thr}.}
 
 \item{screen_params}{Screening parameters. See
 \code{\link{screen_control}}.}
@@ -45,7 +48,7 @@ for classification and \code{5} for regression.}
 \item{num_processors}{Number of parallel threads for random forests.
 Default \code{1}.}
 
-\item{max_modsize}{Maximum module size before blockwise pre-reduction
+\item{max_modsize}{Maximum module size before blockwise pre reduction
 is applied (Python backend only). Default \code{5000}.}
 
 \item{verbose}{Verbose level. \code{0} = silent; \code{1} =
@@ -55,10 +58,15 @@ Default \code{1}.}
 \item{seed}{Integer random seed for reproducibility. Defaults to
 current system time.}
 
-\item{compute_interactions}{Logical. If \code{TRUE} (default), the Python
-backend computes the TreeSHAP interaction matrix.
-Set \code{FALSE} to skip it (faster). Ignored by the
-pure-R backend unless \code{r_shap = "treeshap"}.}
+\item{compute_interactions}{Logical. If \code{TRUE} (default), the TreeSHAP
+interaction matrix is computed by the Python backend
+and by the pure R backend with
+\code{r_shap = "treeshap"}. Set \code{FALSE} to skip
+it (faster); \code{detect_interaction()} and
+\code{plot_potential_interactions()} then have
+nothing to use. It has no effect with
+\code{r_shap = "permutation"}, which never computes
+interactions.}
 
 \item{backend}{Computation backend. \code{"python"} (default) uses
 a Python scikit-learn / SHAP engine via
@@ -74,11 +82,8 @@ backend. One of:
 \describe{
 \item{\code{"permutation"}}{Ranger permutation variable importance
 (default). No extra packages needed. Returns a scalar VIM per
-feature; per-observation SHAP values and SHAP-based plots are
+feature; per observation SHAP values and SHAP based plots are
 unavailable.}
-\item{\code{"fastshap"}}{Approximate Shapley values via
-\pkg{fastshap} (\code{nsim = 50} permutations). Requires the
-\pkg{fastshap} package. No interaction matrix.}
 \item{\code{"treeshap"}}{Exact TreeSHAP values via the R
 \pkg{treeshap} package. Requires \pkg{treeshap}. Also computes a
 \eqn{p \times p} interaction matrix, enabling
@@ -93,26 +98,36 @@ An object of class \code{\link{mossy_forest}}.
 Runs the Mossy Forest algorithm.
 }
 \examples{
+# A small simulated regression problem with two modules of features
+set.seed(1)
+n <- 60
+z <- rnorm(n)
+X <- data.frame(a1 = z + rnorm(n, sd = 0.3), a2 = z + rnorm(n, sd = 0.3),
+                a3 = z + rnorm(n, sd = 0.3), b1 = rnorm(n), b2 = rnorm(n),
+                b3 = rnorm(n))
+y <- z + rnorm(n, sd = 0.3)
+membership <- c(a1 = "A", a2 = "A", a3 = "A", b1 = "B", b2 = "B", b3 = "B")
+
+# The pure R backend needs no Python installation
+fit <- mf(X, y, module_membership = membership,
+          screen_params = screen_control(min_ntree = 50),
+          select_params = select_control(n_reps = 10, min_ntree = 50),
+          final_ntree = 50, backend = "R", verbose = 0, seed = 1)
+print(fit)
+head(fit$final_SHAP)
+
 \dontrun{
-  mf_setup(condaenv = "sfenv")
-
-  data(iris)
-  X   <- iris[, 1:4]
-  y   <- iris$Species
-  mem <- setNames(c("A","A","B","B"), colnames(X))
-
-  res <- mf(X, y, module_membership = mem,
-            screen_params = screen_control(min_ntree = 100),
-            select_params = select_control(n_reps = 25))
-  print(res)
-  plot_importance(res)
+# The Python backend (exact TreeSHAP) needs a configured Python environment
+mf_setup(condaenv = "sfenv")
+fit_py <- mf(X, y, module_membership = membership, backend = "python")
+plot_importance(fit_py)
 }
 }
 \references{
 Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C.,
 Newey, W., & Robins, J. (2018). Double/cross-fit residualed machine learning for
 treatment and structural parameters. \emph{The Econometrics Journal},
-21(1), C1–C68.
+21(1), C1-C68.
 
 Lundberg, S. M., & Lee, S. I. (2017). A unified model for interpreting
 predictions. \emph{NeurIPS}, 30.
