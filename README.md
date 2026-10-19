@@ -1,5 +1,9 @@
 # `mossyforest`: Module aware Optimal Shap StabilitY (MOSSY) Forest
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/timothyzshen/mossyforest/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/timothyzshen/mossyforest/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+  
 A tree based network aware stable feature selection with SHAPley values and random forests for high dimensional and correlated data.
 
 **R Package** `mossyforest` selects a stable set of features from high dimensional correlated data through three phases:
