@@ -24,3 +24,5 @@
   package (Artistic-2.0) and the World Bank World Development Indicators
   (CC BY 4.0); the sources, licenses and changes are documented in the help
   pages.
+* The methods for this package is still under development, will cite when
+  completed.

@@ -61,6 +61,7 @@ plot_importance.mossy_forest <- function(object,
                                                                    option = "viridis"),
                                            ...) {
 
+  .check_shap(object)
   shap_object <- shapviz::shapviz(object$shap_obj$shapley_values,
                                    X = object$final_X)
 
@@ -161,6 +162,7 @@ plot_waterfall.mossy_forest <- function(object,
                                           show_annotation = TRUE,
                                           ...) {
 
+  .check_shap(object)
   shap_object <- shapviz::shapviz(object$shap_obj$shapley_values,
                                    X = object$final_X)
 
@@ -266,6 +268,7 @@ plot_force.mossy_forest <- function(object,
                                       show_annotation = TRUE,
                                       ...) {
 
+  .check_shap(object)
   shap_object <- shapviz::shapviz(object$shap_obj$shapley_values,
                                    X = object$final_X)
 
@@ -701,6 +704,7 @@ plot_decisions.mossy_forest <- function(object,
                                           ...) {
 
   if (!just_shap) {
+    .check_shap(object)
     shap_values <- object$shap_obj$shapley_values
   } else {
     if (!is.data.frame(object))

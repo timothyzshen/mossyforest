@@ -79,6 +79,14 @@ test_that("compute_interactions = FALSE skips the treeshap interaction matrix", 
   expect_null(r_off$shap_obj$interaction_matrix)
 })
 
+test_that("SHAP plots give a clear error on a permutation fit", {
+  d <- make_sf_data(n = 60)
+  r <- fit_R(d, r_shap = "permutation")
+  expect_error(plot_importance(r), "per-observation SHAP values")
+  expect_error(plot_waterfall(r), "per-observation SHAP values")
+  expect_error(plot_decisions(r), "per-observation SHAP values")
+})
+
 test_that("plot_elbow labels the score it plots", {
   d <- make_sf_data(n = 60)
   p <- plot_elbow(fit_R(d, r_shap = "permutation"))

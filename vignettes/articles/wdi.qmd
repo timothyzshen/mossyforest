@@ -422,7 +422,7 @@ falls within one SE of the maximum, we choose the most **parsimonious**.
 
 ## Setup
 
-```{r cv-load-pack}
+```{r cv-load-pack, eval=FALSE}
 #| warning: false
 #| message: false
 

@@ -99,3 +99,14 @@ mf_setup <- function(python = NULL, condaenv = NULL, virtualenv = NULL) {
   if (isTRUE(.mf_py$loaded)) return(invisible(NULL))
   .load_python_backend()
 }
+
+# Stop with a clear message when a fit has no per-observation SHAP values.
+.check_shap <- function(object) {
+  sv <- object$shap_obj$shapley_values
+  if (is.null(sv) || ncol(sv) == 0L || anyNA(sv))
+    stop("This plot needs per-observation SHAP values, which this fit does not ",
+         "have. Refit with backend = \"python\", or backend = \"R\" with ",
+         "r_shap = \"treeshap\" (r_shap = \"permutation\" does not compute them).",
+         call. = FALSE)
+  invisible(object)
+}
