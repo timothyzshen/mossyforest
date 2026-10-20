@@ -9,7 +9,7 @@
 
 * This is a new submission.
 
-## Notes for the reviewer
+## Some Notes
 
 * The default backend uses Python (scikit-learn, shap, numpy) through
   reticulate and is listed in `SystemRequirements`. Python is not needed to
@@ -17,12 +17,5 @@
   automatically. The examples and the vignette do not need Python, the pure R
   backend (`backend = "R"`) runs without it, and the tests that use Python are
   skipped on CRAN.
-* The vignette is precomputed. Its source is `vignettes/mossyforest.Rmd.orig`
-  and it is rebuilt with `vignettes/precompute.R`.
-* `WGCNA` and `treeshap` are in `Suggests` and are only used when installed.
-* The `leukemia` and `wdi` datasets are derived from the Bioconductor `ALL`
-  package (Artistic-2.0) and the World Bank World Development Indicators
-  (CC BY 4.0); the sources, licenses and changes are documented in the help
-  pages.
-* The methods for this package is still under development, will cite when
+* The methods paper for this package is still under development, will cite when
   completed.
