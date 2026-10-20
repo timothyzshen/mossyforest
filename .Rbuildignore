@@ -21,3 +21,5 @@
 ^vignettes/mossyforest\.Rmd\.orig$
 ^vignettes/precompute\.R$
 ^vignettes/\.quarto$
+(^|/)__pycache__$
+(^|/)Rplots\.pdf$

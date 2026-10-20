@@ -29,3 +29,7 @@ renv/python/
 
 docs
 .quarto/
+.RDataTmp
+__pycache__/
+*.pyc
+Rplots.pdf
