@@ -55,20 +55,6 @@ mf_setup <- function(python = NULL, condaenv = NULL, virtualenv = NULL) {
 
 # Internal: keep seeding inside mossyforest from changing the caller's own
 # random number stream. Save the state on entry, restore it with on.exit().
-.save_seed <- function() {
-  if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
-    get(".Random.seed", envir = globalenv(), inherits = FALSE)
-}
-
-.restore_seed <- function(old) {
-  if (is.null(old)) {
-    if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
-      rm(".Random.seed", envir = globalenv())
-  } else {
-    assign(".Random.seed", old, envir = globalenv())
-  }
-  invisible(NULL)
-}
 
 # Internal, load the bundled Python backend into .mf_py
 .load_python_backend <- function() {
