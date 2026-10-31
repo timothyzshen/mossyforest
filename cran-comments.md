@@ -19,15 +19,3 @@
   skipped on CRAN.
 * The methods paper for this package is still under development, will cite when
   completed.
-
-## Resubmission
-
-This is a resubmission. What is updated based on the first submission:
-
-* Removed `options(warn = -1)` from `mf()` and the internal R backend. Warnings are
-  now suppressed with `suppressWarnings()` when `verbose = 0`.
-* Removed the code that assigned to the global environment (the helpers that saved
-  and restored `.Random.seed`). `mf()` now uses `withr::with_preserve_seed()` instead,
-  so the user's random number stream is left unchanged. `withr` is now in `Imports`.
-* Removed the single quotes around the acronyms TreeSHAP and WGCNA in the Description.
-  

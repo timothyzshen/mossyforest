@@ -23,4 +23,3 @@
 ^vignettes/\.quarto$
 (^|/)__pycache__$
 (^|/)Rplots\.pdf$
-^CRAN-SUBMISSION$

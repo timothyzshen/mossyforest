@@ -30,6 +30,10 @@
   sc <- screen_params
   sl <- select_params
   if (is.null(nodesize)) nodesize <- if (CLASSIFICATION) 1L else 5L
+  if (verbose == 0L) {
+    old_opts <- options(warn = -1)
+    on.exit(options(old_opts), add = TRUE)
+  }
 
   # Screening Phase
   if (verbose >= 1L) cat(sprintf("Screening [R / %s] ...\n", r_shap))
@@ -541,6 +545,8 @@
                                     mtry_factor = 1, nodesize = 5L,
                                     seed = 42L, num_processors = 1L) {
   n <- length(y_num); p_corr <- ncol(X_corr)
+  old_seed <- .save_seed()
+  on.exit(.restore_seed(old_seed), add = TRUE)
   set.seed(seed)
   perm     <- sample.int(n)
   fold_ids <- integer(n)
@@ -598,6 +604,8 @@
     np <- length(pool_feats)
     freq_map <- setNames(integer(np), pool_feats)
     prev_freqs <- NULL; n_done <- 0L
+    old_seed <- .save_seed()
+    on.exit(.restore_seed(old_seed), add = TRUE)
     for (b in seq_len(sl$n_reps)) {
       bseed <- pool_seed + b * 97L
       set.seed(bseed)
